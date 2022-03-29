@@ -15,7 +15,6 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\RateLimiter\Exception\RateLimitExceededException;
 use Shopware\Core\Framework\RateLimiter\RateLimiter;
@@ -23,7 +22,7 @@ use Shopware\Core\Framework\Routing\Annotation\ContextTokenRequired;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopware\Core\System\SalesChannel\Context\SalesChannelContextRestorer;
+use Shopware\Core\System\SalesChannel\Context\CartRestorer;
 use Shopware\Core\System\SalesChannel\ContextTokenResponse;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -43,7 +42,7 @@ class LoginRoute extends AbstractLoginRoute
 
     private LegacyPasswordVerifier $legacyPasswordVerifier;
 
-    private SalesChannelContextRestorer $contextRestorer;
+    private CartRestorer $restorer;
 
     private RequestStack $requestStack;
 
@@ -53,14 +52,14 @@ class LoginRoute extends AbstractLoginRoute
         EventDispatcherInterface $eventDispatcher,
         EntityRepositoryInterface $customerRepository,
         LegacyPasswordVerifier $legacyPasswordVerifier,
-        SalesChannelContextRestorer $contextRestorer,
+        CartRestorer $restorer,
         RequestStack $requestStack,
         RateLimiter $rateLimiter
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->customerRepository = $customerRepository;
         $this->legacyPasswordVerifier = $legacyPasswordVerifier;
-        $this->contextRestorer = $contextRestorer;
+        $this->restorer = $restorer;
         $this->requestStack = $requestStack;
         $this->rateLimiter = $rateLimiter;
     }
@@ -141,7 +140,7 @@ class LoginRoute extends AbstractLoginRoute
             throw new InactiveCustomerException($customer->getId());
         }
 
-        $context = $this->contextRestorer->restore($customer->getId(), $context);
+        $context = $this->restorer->restore($customer->getId(), $context);
         $newToken = $context->getToken();
 
         $this->customerRepository->update([
@@ -182,14 +181,27 @@ class LoginRoute extends AbstractLoginRoute
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customer.email', $email));
-        $criteria->addFilter(new EqualsFilter('customer.guest', 0));
-
-        $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, [
-            new EqualsFilter('customer.boundSalesChannelId', null),
-            new EqualsFilter('customer.boundSalesChannelId', $context->getSalesChannel()->getId()),
-        ]));
 
         $result = $this->customerRepository->search($criteria, $context->getContext());
+
+        $result = $result->filter(static function (CustomerEntity $customer) use ($context) {
+            // Skip guest users
+            if ($customer->getGuest()) {
+                return null;
+            }
+
+            // If not bound, we still need to consider it
+            if ($customer->getBoundSalesChannelId() === null) {
+                return true;
+            }
+
+            // It is bound, but not to the current one. Skip it
+            if ($customer->getBoundSalesChannelId() !== $context->getSalesChannel()->getId()) {
+                return null;
+            }
+
+            return true;
+        });
 
         if ($result->count() !== 1) {
             throw new BadCredentialsException();

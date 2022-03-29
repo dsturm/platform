@@ -9,7 +9,7 @@
 		{# TODO NEXT-16994 - replace current list page value #}
 		{% set currentListPage = 1 %}
 
-		{% set productReviewCount = reviews|length %}
+        {% set productReviewCount = reviews.totalReviews %}
 
 		{% if productReviewCount > 0 %}
             {% set productAvgRating = reviews.matrix.averageRating|round(2, 'common')  %}
@@ -98,10 +98,10 @@
                                                                     <input type="hidden" name="sort" value="{{ app.request.get('sort') }}">
                                                                 {% endif %}
 
-                                                                <div class="custom-control custom-switch">
+                                                                <div class="{{ formSwitchWrapperClass }}">
                                                                     {# TODO NEXT-16994 - set checked and disabled state #}
                                                                     <input type="checkbox"
-                                                                           class="custom-control-input"
+                                                                           class="{{ formCheckInputClass }}"
                                                                            id="showForeignReviews"
                                                                            value="filter-language"
                                                                            name="language"
@@ -161,7 +161,7 @@
                                                                     {% endblock %}
 
                                                                     {% block page_product_detail_review_list_action_sortby_select %}
-                                                                        <select class="custom-select custom-select-sm"
+                                                                        <select class="{{ formSelectClass }} {{ formSelectClass }}-sm"
                                                                                 name="sort"
                                                                                 id="reviewsSortby">
                                                                             <option value="createdAt"{% if reviews.criteria.sorting.0.field == 'createdAt' %} selected{% endif %}>
@@ -207,8 +207,7 @@
 
                                         {% block page_product_detail_review_list_paging %}
                                             {% set criteria = reviews.criteria %}
-
-                                            {% set totalPages = (reviews.total/criteria.limit)|round(0,'ceil') %}
+                                            {% set totalPages = (productReviewCount/criteria.limit)|round(0,'ceil') %}
 
                                             {% if totalPages > 1 %}
                                                 {% set formAjaxSubmitOptions = {
@@ -248,7 +247,8 @@
 
                                                             {% sw_include '@Storefront/storefront/component/pagination.html.twig' with {
                                                                 entities: reviews,
-                                                                criteria: criteria
+                                                                criteria: criteria,
+                                                                total: productReviewCount,
                                                             }  %}
                                                         </form>
                                                     </div>

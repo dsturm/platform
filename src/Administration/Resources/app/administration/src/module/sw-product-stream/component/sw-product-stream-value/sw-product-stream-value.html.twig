@@ -27,13 +27,12 @@
     <template v-else-if="fieldType === 'empty'">
         {% block sw_product_stream_value_empty_value %}
         <sw-single-select
+            v-model="emptyValue"
             class="sw-product-stream-value__select"
             size="medium"
             :options="reversedEmptyOptions"
-            :value="isEmptyValue"
             :disabled="disabled"
             show-clearable-button
-            @change="setEmptyValue"
         />
         {% endblock %}
     </template>
@@ -127,10 +126,7 @@
                     </slot>
                 </template>
 
-                <template
-                    v-if="feature.isActive('FEATURE_NEXT_16800')"
-                    #result-description-property="{ item }"
-                >
+                <template #result-description-property="{ item }">
                     <slot
                         name="result-description-property"
                         v-bind="{ item }"
@@ -162,8 +158,23 @@
                 :entity="definition.entity"
                 :context="context"
                 :disabled="disabled"
+                description-position="bottom"
                 show-clearable-button
-            />
+            >
+                <template #result-description-property="{ item }">
+                    {% block sw_product_stream_value_equals_result_label %}
+                    <slot
+                        v-if="definition.entity === 'category'"
+                        name="result-description-property"
+                        v-bind="{ item }"
+                    >
+                        {% block sw_product_stream_value_equals_result_label_default %}
+                        {{ getCategoryBreadcrumb(item) }}
+                        {% endblock %}
+                    </slot>
+                    {% endblock %}
+                </template>
+            </sw-entity-single-select>
             {% endblock %}
 
             {% block sw_product_stream_value_entity_multi_value %}
@@ -193,17 +204,11 @@
                         name="result-label-property"
                         v-bind="{ item, searchTerm, highlightSearchTerm }"
                     >
-                        <template v-if="!feature.isActive('FEATURE_NEXT_16800')">
-                            {{ item.group.translated.name || item.group.name }}:
-                        </template>
                         {{ item.translated.name || item.name }}
                     </slot>
                 </template>
 
-                <template
-                    v-if="feature.isActive('FEATURE_NEXT_16800')"
-                    #result-description-property="{ item, searchTerm, highlightSearchTerm }"
-                >
+                <template #result-description-property="{ item, searchTerm, highlightSearchTerm }">
                     <slot
                         name="result-description-property"
                         v-bind="{ item, searchTerm, highlightSearchTerm }"
@@ -287,10 +292,25 @@
                 v-else-if="isMultiSelectValue"
                 v-model="multiValue"
                 size="medium"
+                description-position="bottom"
                 :repository="repository"
                 :context="context"
                 :disabled="disabled"
-            />
+            >
+                <template #result-description-property="{ item }">
+                    {% block sw_product_stream_value_multi_select_result_label %}
+                    <slot
+                        v-if="definition.entity === 'category'"
+                        name="result-description-property"
+                        v-bind="{ item }"
+                    >
+                        {% block sw_product_stream_value_multi_select_result_label_default %}
+                        {{ getCategoryBreadcrumb(item) }}
+                        {% endblock %}
+                    </slot>
+                    {% endblock %}
+                </template>
+            </sw-entity-multi-id-select>
             {% endblock %}
 
             {% block sw_product_stream_value_entity_no_operator_selected_placeholder %}

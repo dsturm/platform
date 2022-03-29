@@ -7,6 +7,7 @@ use Composer\InstalledVersions;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
 use Shopware\Core\Framework\Adapter\Cache\CacheIdLoader;
+use Shopware\Core\Framework\Adapter\Database\MySQLFactory;
 use Shopware\Core\Framework\Event\BeforeSendRedirectResponseEvent;
 use Shopware\Core\Framework\Event\BeforeSendResponseEvent;
 use Shopware\Core\Framework\Plugin\KernelPluginLoader\DbalKernelPluginLoader;
@@ -79,7 +80,7 @@ class HttpKernel
         } catch (DBALException $e) {
             $connectionParams = self::getConnection()->getParams();
 
-            $message = str_replace([$connectionParams['url'], $connectionParams['password'], $connectionParams['user'], $connectionParams['dbname'], $connectionParams['host']], '******', $e->getMessage());
+            $message = str_replace([$connectionParams['url'], $connectionParams['password'], $connectionParams['user']], '******', $e->getMessage());
 
             throw new \RuntimeException(sprintf('Could not connect to database. Message from SQL Server: %s', $message));
         }
@@ -104,7 +105,9 @@ class HttpKernel
             return self::$connection;
         }
 
-        return self::$connection = self::$kernelClass::getConnection();
+        self::$connection = MySQLFactory::create();
+
+        return self::$connection;
     }
 
     public function terminate(Request $request, Response $response): void

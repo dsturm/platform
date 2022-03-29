@@ -15,11 +15,11 @@ import type ExtensionSdkService from 'src/core/service/api/extension-sdk.service
 import type { ExtensionsState } from './app/state/extensions.store';
 import type { ComponentConfig } from './core/factory/component.factory';
 import type { TabsState } from './app/state/tabs.store';
-import { MenuItemState } from './app/state/menu-item.store';
-import { ModalsState } from './app/state/modals.store';
-import { ExtensionSdkModuleState } from './app/state/extension-sdk-module.store';
-import { MainModuleState } from './app/state/main-module.store';
-import { ActionButtonState } from './app/state/action-button.store';
+import type { MenuItemState } from './app/state/menu-item.store';
+import type { ModalsState } from './app/state/modals.store';
+import type { ExtensionSdkModuleState } from './app/state/extension-sdk-module.store';
+import type { MainModuleState } from './app/state/main-module.store';
+import type { ActionButtonState } from './app/state/action-button.store';
 
 // trick to make it an "external module" to support global type extension
 export {};
@@ -41,10 +41,20 @@ declare global {
     type $TSFixMeFunction = (...args: any[]) => any;
 
     /**
+     * Dangerous "unknown" types which are specific enough but do not provide type safety.
+     * You should avoid using these.
+     */
+    type $TSDangerUnknownObject = {[key: string|symbol]: unknown};
+
+    /**
      * Make the Shopware object globally available
      */
     const Shopware: ShopwareClass;
     interface Window { Shopware: ShopwareClass; }
+
+    const _features_: {
+        [featureName: string]: boolean
+    };
 
     /**
      * Define global container for the bottle.js containers
@@ -111,6 +121,21 @@ declare global {
         workerNotification: $TSFixMe,
     }
 
+    interface FilterTypes {
+        asset: (value: string) => string,
+        currency: $TSFixMeFunction,
+        date: (value: string, options: Intl.DateTimeFormatOptions) => string,
+        'file-size': $TSFixMeFunction,
+        'media-name': $TSFixMeFunction,
+        salutation: $TSFixMeFunction,
+        'stock-color-variant': $TSFixMeFunction
+        striphtml: (value: string) => string,
+        'thumbnail-size': $TSFixMeFunction,
+        truncate: $TSFixMeFunction,
+        'unicode-uri': $TSFixMeFunction,
+        [key: string]: ((...args: any[]) => any)|undefined,
+    }
+
     /**
      * Define global state for the Vuex store
      */
@@ -135,6 +160,10 @@ declare global {
      * define global Component
      */
     type VueComponent = ComponentConfig;
+
+    type apiContext = ContextState['api'];
+
+    type appContext = ContextState['app'];
 }
 
 /**

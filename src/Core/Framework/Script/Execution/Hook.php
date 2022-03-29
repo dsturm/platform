@@ -4,6 +4,9 @@ namespace Shopware\Core\Framework\Script\Execution;
 
 use Shopware\Core\Framework\Context;
 
+/**
+ * @deprecated tag:v6.5.0 will be internal
+ */
 abstract class Hook
 {
     protected Context $context;
@@ -14,16 +17,22 @@ abstract class Hook
     }
 
     /**
-     * The services returned here must all implement the HookAwareService interface.
+     * The services returned here must all extend the abstract HookServiceFactory.
      * These are then available in the script under the variable `services`.
      */
     abstract public static function getServiceIds(): array;
 
-    /**
-     * The name returned here serves as an accessor in the script for the service.
-     * If e.g. `cart` is returned, the service is available under `services.cart`.
-     */
     abstract public function getName(): string;
+
+    /**
+     * If a service will be removed from a hook, return the serviceId as array key and the corresponding deprecation method as the value.
+     *
+     * @return array<string, string> The deprecated service name as array key, with the deprecation message as value.
+     */
+    public static function getDeprecatedServices(): array
+    {
+        return [];
+    }
 
     public function getContext(): Context
     {

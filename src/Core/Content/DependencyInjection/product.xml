@@ -225,6 +225,8 @@
         <service id="Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceCalculator">
             <argument type="service" id="unit.repository"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator"/>
+
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <service id="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingFeaturesSubscriber">
@@ -261,7 +263,6 @@
             <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheTracer"/>
             <argument type="service" id="event_dispatcher"/>
             <argument>%shopware.cache.invalidation.product_suggest_route%</argument>
-            <argument type="service" id="logger"/>
         </service>
 
         <service id="Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRoute" public="true">
@@ -284,7 +285,6 @@
             <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheTracer"/>
             <argument type="service" id="event_dispatcher"/>
             <argument>%shopware.cache.invalidation.product_search_route%</argument>
-            <argument type="service" id="logger" />
         </service>
 
         <service id="Shopware\Core\Content\Product\SalesChannel\Listing\ResolveCriteriaProductListingRoute" decorates="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingRoute" decoration-priority="-2000" public="true">
@@ -300,7 +300,6 @@
             <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheTracer"/>
             <argument type="service" id="event_dispatcher" />
             <argument>%shopware.cache.invalidation.product_listing_route%</argument>
-            <argument type="service" id="logger" />
         </service>
 
         <!-- decorated by cached route -->
@@ -326,6 +325,7 @@
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Content\Product\DataAbstractionLayer\CheapestPriceUpdater"/>
             <argument type="service" id="Shopware\Core\Content\Product\DataAbstractionLayer\ProductStreamUpdater"/>
+            <argument type="service" id="messenger.bus.shopware"/>
             <tag name="shopware.entity_indexer" priority="100"/>
         </service>
 
@@ -362,7 +362,8 @@
             <argument type="service" id="language.repository"/>
             <argument type="service" id="product.repository"/>
             <argument type="service" id="Shopware\Core\Content\Product\SearchKeyword\ProductSearchKeywordAnalyzer"/>
-            <argument type="service" id="product_search_config_field.repository"/>
+
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <service id="Shopware\Core\Content\Product\DataAbstractionLayer\StockUpdater">
@@ -395,7 +396,6 @@
             <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheTracer"/>
             <argument type="service" id="event_dispatcher"/>
             <argument>%shopware.cache.invalidation.product_detail_route%</argument>
-            <argument type="service" id="logger" />
         </service>
 
         <service id="Shopware\Core\Content\Product\SalesChannel\Review\ProductReviewRoute" public="true">
@@ -409,7 +409,6 @@
             <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheTracer"/>
             <argument type="service" id="event_dispatcher"/>
             <argument>%shopware.cache.invalidation.product_review_route%</argument>
-            <argument type="service" id="logger" />
         </service>
 
         <service id="Shopware\Core\Content\Product\SalesChannel\Detail\ProductConfiguratorLoader">
@@ -428,7 +427,6 @@
             <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheTracer"/>
             <argument type="service" id="event_dispatcher"/>
             <argument>%shopware.cache.invalidation.product_cross_selling_route%</argument>
-            <argument type="service" id="logger"/>
         </service>
 
         <service id="Shopware\Core\Content\Product\SalesChannel\CrossSelling\ProductCrossSellingRoute" public="true">

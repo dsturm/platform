@@ -185,17 +185,15 @@ Component.register('sw-settings-rule-detail', {
 
             if (this.rule.isNew()) {
                 this.rule.conditions = this.conditionTree;
-                this.saveRule().then(() => {
+                return this.saveRule().then(() => {
                     this.$router.push({ name: 'sw.settings.rule.detail', params: { id: this.rule.id } });
                     this.isSaveSuccessful = true;
                 }).catch(() => {
                     this.showErrorNotification();
                 });
-
-                return;
             }
 
-            this.saveRule()
+            return this.saveRule()
                 .then(this.syncConditions)
                 .then(() => {
                     this.isSaveSuccessful = true;
@@ -208,6 +206,23 @@ Component.register('sw-settings-rule-detail', {
                     this.isLoading = false;
                     this.showErrorNotification();
                 });
+        },
+
+        abortOnLanguageChange() {
+            return this.ruleRepository.hasChanges(this.rule);
+        },
+
+        saveOnLanguageChange() {
+            return this.onSave();
+        },
+
+        onChangeLanguage(languageId) {
+            Shopware.State.commit('context/setApiLanguageId', languageId);
+
+            this.isLoading = true;
+            this.loadEntityData(this.ruleId).then(() => {
+                this.isLoading = false;
+            });
         },
 
         saveRule() {
@@ -235,6 +250,27 @@ Component.register('sw-settings-rule-detail', {
 
         onCancel() {
             this.$router.push({ name: 'sw.settings.rule.index' });
+        },
+
+        onDuplicate() {
+            return this.onSave().then(() => {
+                const behaviour = {
+                    overwrites: {
+                        name: `${this.rule.name} ${this.$tc('global.default.copy')}`,
+                        // setting the createdAt to null, so that api does set a new date
+                        createdAt: null,
+                    },
+                };
+
+                return this.ruleRepository.clone(this.rule.id, Shopware.Context.api, behaviour).then((duplicatedData) => {
+                    this.$router.push(
+                        {
+                            name: 'sw.settings.rule.detail',
+                            params: { id: duplicatedData.id },
+                        },
+                    );
+                });
+            });
         },
     },
 });

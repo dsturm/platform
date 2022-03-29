@@ -31,9 +31,9 @@
 
         <service id="Shopware\Core\Checkout\Payment\PreparedPaymentService">
             <argument type="service" id="Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerRegistry"/>
-            <argument type="service" id="Shopware\Core\System\StateMachine\StateMachineRegistry"/>
             <argument type="service" id="app_payment_method.repository"/>
             <argument type="service" id="logger"/>
+            <argument type="service" id="Shopware\Core\System\StateMachine\Loader\InitialStateIdLoader"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Payment\Controller\PaymentController" public="true">
@@ -51,8 +51,8 @@
             <argument type="service" id="order.repository"/>
             <argument type="service" id="router"/>
             <argument type="service" id="Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerRegistry"/>
-            <argument type="service" id="Shopware\Core\System\StateMachine\StateMachineRegistry"/>
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="Shopware\Core\System\StateMachine\Loader\InitialStateIdLoader"/>
         </service>
 
         <service id="shopware.jwt_signer" class="Lcobucci\JWT\Signer\Rsa\Sha256"/>
@@ -148,7 +148,6 @@
             <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheTracer"/>
             <argument type="service" id="event_dispatcher"/>
             <argument>%shopware.cache.invalidation.payment_method_route%</argument>
-            <argument type="service" id="logger" />
         </service>
 
         <service id="Shopware\Core\Checkout\Payment\SalesChannel\SortedPaymentMethodRoute" decorates="Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute" decoration-priority="-2000" public="true">

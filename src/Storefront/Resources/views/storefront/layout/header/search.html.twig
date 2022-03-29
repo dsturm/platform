@@ -1,3 +1,7 @@
+{% set searchWidgetOptions = {
+    searchWidgetMinChars: page.header.activeLanguage.productSearchConfig.minSearchLength ?: 3
+} %}
+
 {% block layout_header_search %}
     <div class="collapse"
          id="searchCollapse">
@@ -5,6 +9,7 @@
             <form action="{{ path('frontend.search.page') }}"
                   method="get"
                   data-search-form="true"
+                  data-search-widget-options='{{ searchWidgetOptions|json_encode }}'
                   data-url="{{ path('frontend.search.suggest') }}?search="
                   class="header-search-form">
                 {% block layout_header_search_input_group %}
@@ -22,7 +27,8 @@
                         {% endblock %}
 
                         {% block layout_header_search_button %}
-                            <div class="input-group-append">
+                            {# @deprecated tag:v6.5.0 - Bootstrap v5 removes `input-group-append` wrapper and uses elements as direct children of `input-group` #}
+                            {% if feature('v6.5.0.0') %}
                                 <button type="submit"
                                         class="btn header-search-btn"
                                         aria-label="{{ "header.searchButton"|trans|striptags }}">
@@ -30,7 +36,17 @@
                                         {% sw_icon 'search' %}
                                     </span>
                                 </button>
-                            </div>
+                            {% else %}
+                                <div class="input-group-append">
+                                    <button type="submit"
+                                            class="btn header-search-btn"
+                                            aria-label="{{ "header.searchButton"|trans|striptags }}">
+                                        <span class="header-search-icon">
+                                            {% sw_icon 'search' %}
+                                        </span>
+                                    </button>
+                                </div>
+                            {% endif %}
                         {% endblock %}
                     </div>
                 {% endblock %}

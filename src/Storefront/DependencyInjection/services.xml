@@ -452,6 +452,12 @@
             <argument type="service" id="Shopware\Core\Content\Sitemap\SalesChannel\SitemapRoute"/>
         </service>
 
+        <service id="Shopware\Storefront\Page\Cms\DefaultMediaResolver" decorates="Shopware\Core\Content\Media\Cms\DefaultMediaResolver">
+            <argument type="service" id="Shopware\Storefront\Page\Cms\DefaultMediaResolver.inner"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Translation\Translator"/>
+            <argument type="service" id="assets.packages"/>
+        </service>
+
         <service id="Shopware\Storefront\Framework\Cache\CacheStore" public="true">
             <argument type="service" id="cache.http"/>
             <argument type="service" id="Shopware\Storefront\Framework\Cache\CacheStateValidator"/>
@@ -459,6 +465,7 @@
             <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheTracer"/>
             <argument type="service" id="Shopware\Storefront\Framework\Cache\HttpCacheKeyGenerator"/>
             <argument type="service" id="Shopware\Storefront\Framework\Routing\MaintenanceModeResolver"/>
+            <argument>%session.storage.options%</argument>
         </service>
 
         <service id="Shopware\Storefront\Framework\Cache\HttpCacheKeyGenerator">
@@ -481,26 +488,42 @@
             <argument>%shopware.http.cache.default_ttl%</argument>
             <argument>%shopware.http.cache.enabled%</argument>
             <argument type="service" id="Shopware\Storefront\Framework\Routing\MaintenanceModeResolver"/>
+            <argument>%storefront.reverse_proxy.enabled%</argument>
 
             <tag name="kernel.event_subscriber"/>
         </service>
 
         <service id="shopware.cache.reverse_proxy.redis" class="Redis">
-            <factory class="Symfony\Component\Cache\Adapter\RedisAdapter" method="createConnection"/>
+            <factory class="Shopware\Core\Framework\Adapter\Cache\RedisConnectionFactory" method="createConnection"/>
             <argument>%storefront.reverse_proxy.redis_url%</argument>
         </service>
 
         <service id="Shopware\Storefront\Framework\Cache\ReverseProxy\ReverseProxyCache">
             <argument type="service" id="Shopware\Storefront\Framework\Cache\ReverseProxy\AbstractReverseProxyGateway"/>
             <argument type="service" id="Shopware\Storefront\Framework\Cache\CacheTracer"/>
+            <argument>%shopware.cache.invalidation.http_cache%</argument>
             <tag name="kernel.event_listener"/>
         </service>
+
+        <service id="shopware.storefront.framework.reverse_proxy.http_client" class="GuzzleHttp\Client"/>
 
         <service id="Shopware\Storefront\Framework\Cache\ReverseProxy\AbstractReverseProxyGateway" class="Shopware\Storefront\Framework\Cache\ReverseProxy\RedisReverseProxyGateway">
             <argument>%storefront.reverse_proxy.hosts%</argument>
             <argument>%storefront.reverse_proxy.max_parallel_invalidations%</argument>
             <argument>%storefront.reverse_proxy.ban_method%</argument>
+            <argument>%storefront.reverse_proxy.ban_headers%</argument>
             <argument type="service" id="shopware.cache.reverse_proxy.redis"/>
+            <argument type="service" id="shopware.storefront.framework.reverse_proxy.http_client"/>
+        </service>
+
+        <service id="Shopware\Storefront\Framework\Cache\ReverseProxy\ReverseProxyCacheClearer">
+            <argument type="service" id="shopware.storefront.framework.reverse_proxy.http_client"/>
+            <argument>%storefront.reverse_proxy.hosts%</argument>
+            <argument>%storefront.reverse_proxy.purge_all.ban_method%</argument>
+            <argument>%storefront.reverse_proxy.purge_all.ban_headers%</argument>
+            <argument>%storefront.reverse_proxy.purge_all.urls%</argument>
+            <argument>%storefront.reverse_proxy.max_parallel_invalidations%</argument>
+            <tag name="kernel.cache_clearer"/>
         </service>
 
         <service id="Shopware\Storefront\Framework\Cache\CacheWarmer\CacheWarmer">

@@ -4,6 +4,7 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    color-scheme: light;
 }
 
 body {
@@ -28,9 +29,12 @@ body,
     z-index: $z-index-drag-select-box;
 }
 
+a,
 .link {
     display: inline-block;
     color: $color-shopware-brand-500;
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 /* style inline external links */

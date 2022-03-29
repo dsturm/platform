@@ -20,6 +20,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaI
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
+use Shopware\Core\Framework\Routing\Annotation\Acl;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
@@ -167,6 +168,7 @@ class SalesChannelProxyController extends AbstractController
     /**
      * @Since("6.2.0.0")
      * @Route("/api/_proxy/switch-customer", name="api.proxy.switch-customer", methods={"PATCH"})
+     * @Acl({"api_proxy_switch-customer"})
      *
      * @throws InconsistentCriteriaIdsException
      * @throws InvalidSalesChannelIdException
@@ -186,9 +188,9 @@ class SalesChannelProxyController extends AbstractController
 
         $this->fetchSalesChannel($salesChannelId, $context);
 
-        $this->persistPermissions($request);
-
         $salesChannelContext = $this->fetchSalesChannelContext($salesChannelId, $request, $context);
+
+        $this->persistPermissions($request, $salesChannelContext);
 
         $this->updateCustomerToContext($request->get(self::CUSTOMER_ID), $salesChannelContext);
 
@@ -412,18 +414,24 @@ class SalesChannelProxyController extends AbstractController
         $this->eventDispatcher->dispatch($event);
     }
 
-    private function persistPermissions(Request $request): void
+    private function persistPermissions(Request $request, SalesChannelContext $salesChannelContext): void
     {
-        $contextToken = $this->getContextToken($request);
+        $contextToken = $salesChannelContext->getToken();
 
-        $salesChannelId = (string) $request->request->get('salesChannelId');
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
 
         $payload = $this->contextPersister->load($contextToken, $salesChannelId);
+        $requestPermissions = $request->get(SalesChannelContextService::PERMISSIONS);
 
-        if (!\in_array(SalesChannelContextService::PERMISSIONS, $payload, true)) {
-            $payload[SalesChannelContextService::PERMISSIONS] = self::ADMIN_ORDER_PERMISSIONS;
-            $this->contextPersister->save($contextToken, $payload, $salesChannelId);
+        if (\in_array(SalesChannelContextService::PERMISSIONS, $payload, true) && !$requestPermissions) {
+            return;
         }
+
+        $payload[SalesChannelContextService::PERMISSIONS] = $requestPermissions
+            ? \array_fill_keys($requestPermissions, true)
+            : [self::ADMIN_ORDER_PERMISSIONS];
+
+        $this->contextPersister->save($contextToken, $payload, $salesChannelId);
     }
 
     private function parseCalculatedPriceByRequest(Request $request): CalculatedPrice

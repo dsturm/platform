@@ -116,7 +116,7 @@ describe('Checkout: Visual tests', () => {
         cy.login();
         cy.visit(`${Cypress.env('admin')}#/sw/order/index`);
 
-        cy.get('.sw-data-grid__skeleton').should('not.exist');
+        cy.get('.sw-skeleton__listing').should('not.exist');
         cy.prepareAdminForScreenshot();
 
         // Change color of the element to ensure consistent snapshots
@@ -125,6 +125,7 @@ describe('Checkout: Visual tests', () => {
         // Take snapshot for visual testing
         cy.takeSnapshot(`${Cypress.env('testDataUsage') ? '[Update]' : '[Install]'} Order listing`, '.sw-order-list');
 
+        cy.prepareAdminForScreenshot();
         cy.clickContextMenuItem(
             '.sw-order-list__order-view-action',
             page.elements.contextMenuButton,

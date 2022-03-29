@@ -1,7 +1,7 @@
 shopware:
   feature:
     flags:
-      - name: v6_5_0_0
+      - name: v6.5.0.0
         default: false
         major: true
       - name: FEATURE_NEXT_1797
@@ -111,7 +111,7 @@ shopware:
         # issue: NEXT-15687
       - name: FEATURE_NEXT_14001
         default: false
-        major: false
+        major: true
         description: "Newsletter DOI for registered customers"
         # issue: NEXT-14001
       - name: FEATURE_NEXT_7739
@@ -192,11 +192,6 @@ shopware:
         major: true
         description: "Change ExceptionHandlerInterface by removing Command $command argument"
         # issue: NEXT-16640
-      - name: FEATURE_NEXT_16800
-        default: false
-        major: true
-        description: "Rule Builder List Items need to provide more informations"
-        # issue: NEXT-16800
       - name: FEATURE_NEXT_17261
         default: false
         major: false
@@ -222,11 +217,11 @@ shopware:
         major: true
         description: "Fix media resolution in theme"
         # issue: NEXT-19048
-      - name: FEATURE_NEXT_17421
+      - name: FEATURE_NEXT_19822
         default: false
-        major: false
-        description: "Enables merchants to organize their sales channels by sorting and marking them as favourites"
-        # issue: NEXT-17421
+        major: true
+        description: "Enables lazy loading components in the administration"
+        # issue: NEXT-19822
       - name: FEATURE_NEXT_17540
         default: false
         major: false
@@ -267,4 +262,3 @@ shopware:
         major: true
         description: "Remove composite search api"
         # issue: NEXT_18762
-

@@ -245,8 +245,19 @@ Component.register('sw-product-stream-value', {
             set(value) { this.actualCondition.parameters.operator = this.getParameterName(value); },
         },
 
-        isEmptyValue() {
-            return this.filterType === 'equals';
+        emptyValue: {
+            get() {
+                return this.condition.type !== null ? this.filterType === 'equals' : null;
+            },
+            set(value) {
+                if (value === undefined || value === null) {
+                    this.$emit('empty-change', { type: null });
+
+                    return;
+                }
+
+                this.$emit('empty-change', { type: value ? 'equals' : 'notEquals' });
+            },
         },
 
         stringValue: {
@@ -436,16 +447,20 @@ Component.register('sw-product-stream-value', {
             this.$emit('boolean-change', { type: +value ? 'equals' : 'notEquals', value });
         },
 
-        setEmptyValue(value) {
-            this.$emit('empty-change', { type: value ? 'equals' : 'notEquals' });
-        },
-
         setSearchTerm(value) {
             this.searchTerm = value;
         },
 
         onSelectCollapsed() {
             this.searchTerm = '';
+        },
+
+        getCategoryBreadcrumb(category) {
+            if (!category.breadcrumb || Object.keys(category.breadcrumb).length === 0) {
+                return category.name;
+            }
+
+            return Object.values(category.breadcrumb).join(' / ');
         },
     },
 });

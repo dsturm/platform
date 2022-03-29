@@ -17,6 +17,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class CacheStore implements StoreInterface
 {
+    public const TAG_HEADER = 'sw-cache-tags';
+
     private TagAwareAdapterInterface $cache;
 
     private array $locks = [];
@@ -34,6 +36,8 @@ class CacheStore implements StoreInterface
 
     private MaintenanceModeResolver $maintenanceResolver;
 
+    private string $sessionName;
+
     /**
      * @param AbstractCacheTracer<StoreApiResponse> $tracer
      */
@@ -43,7 +47,8 @@ class CacheStore implements StoreInterface
         EventDispatcherInterface $eventDispatcher,
         AbstractCacheTracer $tracer,
         AbstractHttpCacheKeyGenerator $cacheKeyGenerator,
-        MaintenanceModeResolver $maintenanceModeResolver
+        MaintenanceModeResolver $maintenanceModeResolver,
+        array $sessionOptions
     ) {
         $this->cache = $cache;
         $this->stateValidator = $stateValidator;
@@ -51,6 +56,7 @@ class CacheStore implements StoreInterface
         $this->tracer = $tracer;
         $this->cacheKeyGenerator = $cacheKeyGenerator;
         $this->maintenanceResolver = $maintenanceModeResolver;
+        $this->sessionName = $sessionOptions['name'] ?? 'session-';
     }
 
     /**
@@ -102,11 +108,6 @@ class CacheStore implements StoreInterface
             $response->setContext(null);
         }
 
-        $item = $this->cache->getItem($key);
-
-        $item = CacheCompressor::compress($item, $response);
-        $item->expiresAt($response->getExpires());
-
         $tags = $this->tracer->get('all');
 
         $tags = array_filter($tags, static function (string $tag): bool {
@@ -122,6 +123,33 @@ class CacheStore implements StoreInterface
 
             return true;
         });
+
+        if ($response->headers->has(self::TAG_HEADER)) {
+            /** @var string $tagHeader */
+            $tagHeader = $response->headers->get(self::TAG_HEADER);
+            $responseTags = \json_decode($tagHeader, true, 512, \JSON_THROW_ON_ERROR);
+            $tags = array_merge($responseTags, $tags);
+
+            $response->headers->remove(self::TAG_HEADER);
+        }
+
+        $item = $this->cache->getItem($key);
+
+        /**
+         * Symfony pops out in AbstractSessionListener(https://github.com/symfony/symfony/blob/v5.4.5/src/Symfony/Component/HttpKernel/EventListener/AbstractSessionListener.php#L139-L186) the session and assigns it to the Response
+         * We should never cache the cookie of the actual browser session, this part removes it again from the cloned response object. As they poped it out of the PHP stack, we need to from it only from the cached response
+         */
+        $cacheResponse = clone $response;
+        $cacheResponse->headers = clone $response->headers;
+
+        foreach ($cacheResponse->headers->getCookies() as $cookie) {
+            if ($cookie->getName() === $this->sessionName) {
+                $cacheResponse->headers->removeCookie($cookie->getName(), $cookie->getPath(), $cookie->getDomain());
+            }
+        }
+
+        $item = CacheCompressor::compress($item, $cacheResponse);
+        $item->expiresAt($cacheResponse->getExpires());
 
         $item->tag($tags);
 

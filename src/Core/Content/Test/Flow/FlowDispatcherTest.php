@@ -12,6 +12,7 @@ use Shopware\Core\Content\Flow\Dispatching\FlowDispatcher;
 use Shopware\Core\Content\Flow\Dispatching\FlowLoader;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -48,8 +49,6 @@ class FlowDispatcherTest extends TestCase
         $this->flowLoader = $this->getContainer()->get(FlowLoader::class);
 
         $this->ids = new TestDataCollection(Context::createDefaultContext());
-
-        $this->resetCachedFlows();
     }
 
     protected function tearDown(): void
@@ -65,9 +64,15 @@ class FlowDispatcherTest extends TestCase
         $event = new TestFlowBusinessEvent($context);
 
         $eventDispatcherMock = static::createMock(EventDispatcherInterface::class);
-        $eventDispatcherMock->expects(static::exactly(1))
-            ->method('dispatch')
-            ->willReturn($event);
+        if (Feature::isActive('v6.5.0.0')) {
+            $eventDispatcherMock->expects(static::exactly(2))
+                ->method('dispatch')
+                ->willReturn($event);
+        } else {
+            $eventDispatcherMock->expects(static::exactly(1))
+                ->method('dispatch')
+                ->willReturn($event);
+        }
 
         $dispatcher = new FlowDispatcher(
             $eventDispatcherMock,
@@ -431,20 +436,5 @@ class FlowDispatcherTest extends TestCase
             ], $additionSequence),
         ],
         ], $additionFlow), Context::createDefaultContext());
-    }
-
-    private function resetCachedFlows(): void
-    {
-        $class = new \ReflectionClass($this->flowLoader);
-
-        if ($class->hasProperty('flows')) {
-            $class = new \ReflectionClass($this->flowLoader);
-            $property = $class->getProperty('flows');
-            $property->setAccessible(true);
-            $property->setValue(
-                $this->flowLoader,
-                []
-            );
-        }
     }
 }

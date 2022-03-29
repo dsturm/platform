@@ -23,7 +23,7 @@
       "labelSortByShopPages": "Shop pages",
       "labelSortByLandingPages": "Landing pages",
       "labelSortByProductPages": "Product pages",
-      "labelSortByCategoryPages": "Category pages"
+      "labelSortByCategoryPages": "Listing pages"
     },
     "list": {
       "gridHeaderName": "Name",
@@ -80,6 +80,7 @@
       "label": {
         "buttonSave": "Save",
         "pageName": "Layout name",
+        "pageCssClass": "CSS classes",
         "pageType": "Layout type",
         "pageTypeLandingpage": "Landing page",
         "pageTypeShopPage": "Shop page",

@@ -124,11 +124,13 @@ based on: https://github.com/ganlanyuan/tiny-slider
     }
 }
 
-@include media-breakpoint-down(sm) {
+// @deprecated tag:v6.5.0 - Bootstrap v5 uses the breakpoint itself instead of the next breakpoint in `media-breakpoint-down()`, use `md` instead of `sm`.
+@include media-breakpoint-down(if(feature('v6.5.0.0'), md, sm)) {
     .base-slider {
         .tns-nav,
         .base-slider-dots {
             width: 55%;
+            text-align: center;
 
             &.hide-dots,
             &.hide-dots-mobile {

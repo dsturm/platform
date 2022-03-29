@@ -220,6 +220,11 @@ base-uri 'self';
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
         </service>
 
+        <service id="Shopware\Core\Framework\Routing\RouteEventSubscriber">
+            <tag name="kernel.event_subscriber"/>
+            <argument type="service" id="event_dispatcher"/>
+        </service>
+
         <!-- Translation -->
         <service id="Shopware\Core\Framework\Adapter\Translation\Translator"
                  decorates="translator">
@@ -321,6 +326,8 @@ base-uri 'self';
             <argument>%kernel.cache_dir%</argument>
             <argument type="service"
                       id="Shopware\Core\Framework\Adapter\Twig\NamespaceHierarchy\NamespaceHierarchyBuilder"/>
+
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <service id="Shopware\Core\Framework\Adapter\Twig\NamespaceHierarchy\NamespaceHierarchyBuilder">
@@ -375,6 +382,7 @@ base-uri 'self';
 
         <service id="Shopware\Core\Framework\Adapter\Twig\StringTemplateRenderer">
             <argument type="service" id="twig"/>
+            <argument>%kernel.cache_dir%%</argument>
         </service>
 
         <service id="Shopware\Core\Framework\Adapter\Twig\TemplateIterator"
@@ -390,6 +398,7 @@ base-uri 'self';
 
             <tag name="twig.loader"/>
             <tag name="kernel.event_subscriber"/>
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <service id="Shopware\Core\Framework\Adapter\Twig\AppTemplateIterator"
@@ -527,6 +536,16 @@ base-uri 'self';
             <argument type="service" id="messenger.bus.shopware"/>
 
             <tag name="messenger.message_handler"/>
+        </service>
+
+        <service id="Shopware\Core\Framework\Adapter\Cache\Script\Facade\CacheInvalidatorFacadeHookFactory" public="true">
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheInvalidator"/>
+        </service>
+
+        <service id="Shopware\Core\Framework\Adapter\Cache\Script\ScriptCacheInvalidationSubscriber">
+            <argument type="service" id="Shopware\Core\Framework\Script\Execution\ScriptExecutor"/>
+
+            <tag name="kernel.event_subscriber"/>
         </service>
 
         <service id="Shopware\Core\Content\Media\Message\GenerateThumbnailsHandler">

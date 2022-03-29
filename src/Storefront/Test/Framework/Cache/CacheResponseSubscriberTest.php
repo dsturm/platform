@@ -7,6 +7,7 @@ use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Framework\Event\BeforeSendResponseEvent;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\SalesChannelRequest;
@@ -28,13 +29,16 @@ class CacheResponseSubscriberTest extends TestCase
 
     private const IP = '127.0.0.1';
 
+    private static array $hashes = [];
+
     public function testNoHeadersAreSetIfCacheIsDisabled(): void
     {
         $subscriber = new CacheResponseSubscriber(
             $this->createMock(CartService::class),
             100,
             false,
-            $this->getContainer()->get(MaintenanceModeResolver::class)
+            $this->getContainer()->get(MaintenanceModeResolver::class),
+            false
         );
 
         $customer = $this->createMock(CustomerEntity::class);
@@ -62,7 +66,7 @@ class CacheResponseSubscriberTest extends TestCase
     /**
      * @dataProvider cashHashProvider
      */
-    public function testGenerateCashHashWithItemsInCart($customer, Cart $cart, bool $hasCookie): void
+    public function testGenerateCashHashWithItemsInCart($customer, Cart $cart, bool $hasCookie, ?string $hashName = null): void
     {
         $service = $this->createMock(CartService::class);
         $service->method('getCart')->willReturn($cart);
@@ -71,7 +75,8 @@ class CacheResponseSubscriberTest extends TestCase
             $service,
             100,
             true,
-            $this->getContainer()->get(MaintenanceModeResolver::class)
+            $this->getContainer()->get(MaintenanceModeResolver::class),
+            false
         );
 
         $salesChannelContext = $this->createMock(SalesChannelContext::class);
@@ -103,6 +108,27 @@ class CacheResponseSubscriberTest extends TestCase
 
         if ($hasCookie) {
             static::assertNotNull($cookie->getValue());
+            if ($hashName) {
+                if (!isset(self::$hashes[$hashName])) {
+                    self::$hashes[$hashName] = $cookie->getValue();
+                }
+
+                foreach (self::$hashes as $name => $value) {
+                    if ($hashName === $name) {
+                        static::assertEquals(
+                            $value,
+                            $cookie->getValue(),
+                            \sprintf('Hashes for state "%s" did not match, got "%s", but expected "%s"', $hashName, $cookie->getValue(), $value)
+                        );
+                    } else {
+                        static::assertNotEquals(
+                            $value,
+                            $cookie->getValue(),
+                            \sprintf('Hashes for state "%s" and state "%s" should not match, but did match.', $hashName, $name)
+                        );
+                    }
+                }
+            }
         } else {
             static::assertNull($cookie->getValue());
         }
@@ -119,7 +145,8 @@ class CacheResponseSubscriberTest extends TestCase
             $cartService,
             100,
             true,
-            $this->getContainer()->get(MaintenanceModeResolver::class)
+            $this->getContainer()->get(MaintenanceModeResolver::class),
+            false
         );
 
         $customer = $this->createMock(CustomerEntity::class);
@@ -170,9 +197,10 @@ class CacheResponseSubscriberTest extends TestCase
         $filledCart->add(new LineItem('test', 'test', 'test'));
 
         yield 'Test with no logged in customer' => [null, $emptyCart, false];
-        yield 'Test with logged in customer' => [$customer, $emptyCart, true];
-        yield 'Test with filled cart' => [null, $filledCart, true];
-        yield 'Test with filled cart and logged in customer' => [$customer, $filledCart, true];
+        yield 'Test with filled cart' => [null, $filledCart, true, 'not-logged-in'];
+        // all logged in customer should share the same cache hash if no rules match
+        yield 'Test with logged in customer' => [$customer, $emptyCart, true, 'logged-in'];
+        yield 'Test with filled cart and logged in customer' => [$customer, $filledCart, true, 'logged-in'];
     }
 
     public function maintenanceRequest()
@@ -181,5 +209,75 @@ class CacheResponseSubscriberTest extends TestCase
         yield 'Always cache requests when maintenance is active' => [true, [], true];
         yield 'Do not cache requests of whitelisted ip' => [true, [self::IP], false];
         yield 'Cache requests if ip is not whitelisted' => [true, ['120.0.0.0'], true];
+    }
+
+    /**
+     * @dataProvider headerCases
+     */
+    public function testResponseHeaders(bool $reverseProxyEnabled, ?string $beforeHeader, string $afterHeader): void
+    {
+        $response = new Response();
+
+        if ($beforeHeader) {
+            $response->headers->set('cache-control', $beforeHeader);
+        }
+
+        $subscriber = new CacheResponseSubscriber(
+            $this->createMock(CartService::class),
+            100,
+            true,
+            $this->createMock(MaintenanceModeResolver::class),
+            $reverseProxyEnabled
+        );
+
+        $subscriber->updateCacheControlForBrowser(new BeforeSendResponseEvent(new Request(), $response));
+
+        static::assertSame($afterHeader, $response->headers->get('cache-control'));
+    }
+
+    public function headerCases(): iterable
+    {
+        yield 'no cache proxy, default response' => [
+            false,
+            null,
+            'no-cache, private',
+        ];
+
+        yield 'no cache proxy, default response with no-store (/account)' => [
+            false,
+            'no-store, private',
+            'no-store, private',
+        ];
+
+        // @see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#preventing_storing
+        yield 'no cache proxy, no-cache will be replaced with no-store' => [
+            false,
+            'no-store, no-cache, private',
+            'no-store, private',
+        ];
+
+        yield 'no cache proxy, public content served as private for end client' => [
+            false,
+            'public, s-maxage=64000',
+            'no-cache, private',
+        ];
+
+        yield 'cache proxy, cache-control is not touched' => [
+            true,
+            'public',
+            'public',
+        ];
+
+        yield 'cache proxy, cache-control is not touched #2' => [
+            true,
+            'public, s-maxage=64000',
+            'public, s-maxage=64000',
+        ];
+
+        yield 'cache proxy, cache-control is not touched #3' => [
+            true,
+            'private, no-store',
+            'no-store, private', // Symfony sorts the cache-control
+        ];
     }
 }

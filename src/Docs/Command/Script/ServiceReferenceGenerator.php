@@ -4,6 +4,7 @@ namespace Shopware\Docs\Command\Script;
 
 use League\ConstructFinder\ConstructFinder;
 use phpDocumentor\Reflection\DocBlock;
+use phpDocumentor\Reflection\DocBlock\Tags\Deprecated;
 use phpDocumentor\Reflection\DocBlock\Tags\Example;
 use phpDocumentor\Reflection\DocBlock\Tags\Generic;
 use phpDocumentor\Reflection\DocBlock\Tags\Method;
@@ -25,11 +26,13 @@ class ServiceReferenceGenerator implements ScriptReferenceGenerator
 {
     public const GROUP_DATA_LOADING = 'data_loading';
     public const GROUP_CART_MANIPULATION = 'cart_manipulation';
+    public const GROUP_CUSTOM_ENDPOINT = 'custom_endpoint';
     public const GROUP_MISCELLANEOUS = 'miscellaneous';
 
     public const GROUPS = [
         self::GROUP_DATA_LOADING => 'data-loading-script-services-reference.md',
         self::GROUP_CART_MANIPULATION => 'cart-manipulation-script-services-reference.md',
+        self::GROUP_CUSTOM_ENDPOINT => 'custom-endpoint-script-services-reference.md',
         self::GROUP_MISCELLANEOUS => 'miscellaneous-script-services-reference.md',
     ];
 
@@ -120,12 +123,9 @@ class ServiceReferenceGenerator implements ScriptReferenceGenerator
         return $description->render();
     }
 
-    /**
-     * @param class-string<object> $className
-     */
     public function getLinkForClass(string $className, array $scriptServices = []): ?string
     {
-        if (!str_starts_with($className, 'Shopware\\')) {
+        if (!str_starts_with($className, 'Shopware\\') || !\class_exists($className)) {
             return null;
         }
 
@@ -195,6 +195,12 @@ class ServiceReferenceGenerator implements ScriptReferenceGenerator
                 'description' => 'Here you find a complete reference of all script services that can be used to manipulate the cart.',
                 'services' => [],
             ],
+            self::GROUP_CUSTOM_ENDPOINT => [
+                'title' => 'Custom Endpoint',
+                'fileName' => self::GROUPS[self::GROUP_CUSTOM_ENDPOINT],
+                'description' => 'Here you find a complete reference of all script services that can be used in your custom endpoints.',
+                'services' => [],
+            ],
             self::GROUP_MISCELLANEOUS => [
                 'title' => 'Miscellaneous',
                 'fileName' => self::GROUPS[self::GROUP_MISCELLANEOUS],
@@ -212,6 +218,9 @@ class ServiceReferenceGenerator implements ScriptReferenceGenerator
                 continue;
             }
 
+            /** @var Deprecated|null $deprecated */
+            $deprecated = $docBlock->getTagsByName('deprecated')[0] ?? null;
+
             $group = $this->getGroupForService($reflection);
 
             $data[$group]['services'][] = [
@@ -220,6 +229,7 @@ class ServiceReferenceGenerator implements ScriptReferenceGenerator
                 // add fragment-marker to easily link to specific classes, see https://stackoverflow.com/a/54335742/10064036
                 // as `{#` indicates a twig comment, we can't add it inside the template
                 'marker' => '{#' . strtolower($reflection->getShortName()) . '}',
+                'deprecated' => $deprecated ? (string) $deprecated : null,
                 'summary' => $docBlock->getSummary(),
                 'description' => $docBlock->getDescription()->render(),
                 'methods' => $this->getMethods($reflection, $scriptServices),
@@ -265,10 +275,14 @@ class ServiceReferenceGenerator implements ScriptReferenceGenerator
                 continue;
             }
 
+            /** @var Deprecated|null $deprecated */
+            $deprecated = $docBlock->getTagsByName('deprecated')[0] ?? null;
+
             $methods[] = [
                 'title' => $method->getName() . '()',
                 'summary' => $docBlock->getSummary(),
                 'description' => $docBlock->getDescription()->render(),
+                'deprecated' => $deprecated ? (string) $deprecated : null,
                 'arguments' => $this->parseArguments($method, $docBlock, $scriptServices),
                 'return' => $this->parseReturn($method, $docBlock, $scriptServices),
                 'examples' => $this->parseExamples($method, $docBlock),
@@ -381,8 +395,10 @@ class ServiceReferenceGenerator implements ScriptReferenceGenerator
                 // exclude js files including node_modules for performance reasons, filtering with `notPath`, etc. has no performance impact
                 // note that excluded paths need to be relative to platform/src and that no wildcards are supported
                 ->exclude([
-                    'Administration/Resources/app',
-                    'Storefront/Resources/app',
+                    'Administration/Resources',
+                    'Storefront/Resources',
+                    'Recovery',
+                    'Docs',
                 ])
                 ->path($example->getFilePath())
                 ->ignoreUnreadableDirs();

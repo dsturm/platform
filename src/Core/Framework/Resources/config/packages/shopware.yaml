@@ -159,8 +159,13 @@ shopware:
         versioning:
             expire_days: 30
 
+    mail:
+        update_on_order: true
+
     cart:
+        compress: false
         expire_days: 120
+        redis_url: false
 
     sales_channel_context:
         expire_days: 120
@@ -203,9 +208,9 @@ shopware:
             product_listing_route: []
             product_detail_route: []
             product_review_route: []
-            product_search_route: [ ]
-            product_suggest_route: [ ]
-            product_cross_selling_route: [ ]
+            product_search_route: []
+            product_suggest_route: []
+            product_cross_selling_route: []
             payment_method_route: []
             shipping_method_route: []
             navigation_route: []

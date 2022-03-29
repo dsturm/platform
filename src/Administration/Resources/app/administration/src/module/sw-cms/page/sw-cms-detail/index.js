@@ -739,6 +739,7 @@ Component.register('sw-cms-detail', {
 
         pageIsValid() {
             this.validationWarnings = [];
+            Shopware.State.dispatch('error/resetApiErrors');
 
             const valid = [
                 this.missingFieldsValidation(),
@@ -917,13 +918,28 @@ Component.register('sw-cms-detail', {
             this.updateDataMapping();
         },
 
-        onBlockDuplicate(block, section) {
-            this.cloneBlockInSection(block, section);
-            this.updateSectionAndBlockPositions();
+        async onBlockDuplicate(block, { position: sectionPosition = 0 }) {
+            const behavior = {
+                overwrites: {
+                    position: block.position + 1,
+                },
+                cloneChildren: true,
+            };
 
-            this.debouncedPageSave();
+            const { id: clonedBlockID } = await this.blockRepository.clone(block.id, Shopware.Context.api, behavior);
+            const clonedBlock = await this.blockRepository.get(clonedBlockID);
+
+            const section = this.page.sections[sectionPosition];
+
+            section.blocks.splice(clonedBlock.position, 0, clonedBlock);
+            this.updateBlockPositions(section);
+
+            this.onSave();
         },
 
+        /**
+        * @deprecated tag:v6.5.0 - Superseded by the clone API
+        */
         cloneBlockInSection(block, section) {
             const newBlock = this.blockRepository.create();
 
@@ -941,6 +957,9 @@ Component.register('sw-cms-detail', {
             section.blocks.splice(newBlock.position, 0, newBlock);
         },
 
+        /**
+        * @deprecated tag:v6.5.0 - Superseded by the clone API
+        */
         cloneSlotsInBlock(block, newBlock) {
             block.slots.forEach((slot) => {
                 const element = this.slotRepository.create();
@@ -954,11 +973,27 @@ Component.register('sw-cms-detail', {
             });
         },
 
-        onSectionDuplicate(section) {
-            this.prepareSectionClone(section);
+        async onSectionDuplicate(section) {
+            const behavior = {
+                overwrites: {
+                    position: section.position + 1,
+                },
+                cloneChildren: true,
+            };
+
+            const { id: clonedSectionID } = await this.sectionRepository.clone(section.id, Shopware.Context.api, behavior);
+            const clonedSection = await this.sectionRepository.get(clonedSectionID);
+
+
+            this.page.sections.splice(clonedSection.position, 0, clonedSection);
+            this.updateSectionAndBlockPositions(section);
+
             this.onSave();
         },
 
+        /**
+        * @deprecated tag:v6.5.0 - Superseded by the clone API
+        */
         prepareSectionClone(section) {
             const newSection = this.sectionRepository.create();
 
@@ -1076,7 +1111,7 @@ Component.register('sw-cms-detail', {
                 sections.blocks.forEach((block) => {
                     block.slots.forEach((slot) => {
                         Object.keys(slot.config).forEach((key) => {
-                            if (slot.config[key].source && slot.config[key].source === 'mapped') {
+                            if (slot.config[key]?.source === 'mapped') {
                                 const mappingPath = slot.config[key].value.split('.');
 
                                 if (mappingPath[0] !== this.demoEntity) {

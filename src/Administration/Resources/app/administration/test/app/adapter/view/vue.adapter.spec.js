@@ -1,7 +1,7 @@
 import { shallowMount, config } from '@vue/test-utils';
 import VueAdapter from 'src/app/adapter/view/vue.adapter';
 import ViewAdapter from 'src/core/adapter/view.adapter';
-import ComponentFactory from 'src/core/factory/component.factory';
+import ComponentFactory from 'src/core/factory/async-component.factory';
 
 jest.mock('vue-i18n', () => (function MockI18n() {}));
 Shopware.Service().register('localeHelper', () => {
@@ -10,10 +10,12 @@ Shopware.Service().register('localeHelper', () => {
     };
 });
 
-describe('app/adapter/view/vue.adapter.js', () => {
+describe('ASYNC app/adapter/view/vue.adapter.js', () => {
     let vueAdapter;
 
     beforeEach(() => {
+        global.activeFeatureFlags = ['FEATURE_NEXT_19822'];
+
         // delete global $router and $routes mocks
         delete config.mocks.$router;
         delete config.mocks.$route;
@@ -83,7 +85,7 @@ describe('app/adapter/view/vue.adapter.js', () => {
         expect(Shopware.Service('localeHelper').setLocaleWithId).toHaveBeenCalledWith(expectedId);
     });
 
-    it('should resolve mixins by explicit Mixin get by name call', () => {
+    it('should resolve mixins by explicit Mixin get by name call', async () => {
         Shopware.Mixin.register('foo1', {
             methods: {
                 fooBar() {
@@ -104,39 +106,23 @@ describe('app/adapter/view/vue.adapter.js', () => {
                 Shopware.Mixin.getByName('foo1')
             ],
             methods: {
-                bar() {}
+                bar() {
+                    return 'bar';
+                }
             }
         });
 
-        const buildComp = vueAdapter.createComponent('test-component1');
-        let wrapper = shallowMount(buildComp);
+        const buildComp = (await vueAdapter.createComponent('test-component1'))();
+        const wrapper = shallowMount(await buildComp.component);
 
-        expect(buildComp.sealedOptions.methods.fooBar).toBeDefined();
-        expect(buildComp.sealedOptions.methods.bar).toBeDefined();
+        expect(wrapper.vm.fooBar).toBeDefined();
+        expect(wrapper.vm.bar).toBeDefined();
         expect(wrapper.vm.fooBar()).toBe('testComponent');
-
-        Shopware.Component.override('test-component1', {
-            data() {
-                return {
-                    title: 'testComponentOverride'
-                };
-            },
-            methods: {
-                buz() {}
-            }
-        });
-
-        const buildOverrideComp = vueAdapter.createComponent('test-component1');
-        wrapper = shallowMount(buildOverrideComp);
-
-        expect(buildOverrideComp.sealedOptions.methods.fooBar).toBeDefined();
-        expect(buildOverrideComp.sealedOptions.methods.bar).toBeDefined();
-        expect(buildOverrideComp.sealedOptions.methods.buz).toBeDefined();
-        expect(wrapper.vm.fooBar()).toBe('testComponentOverride');
+        expect(wrapper.vm.bar()).toBe('bar');
     });
 
-    it('should resolve mixins by string', () => {
-        Shopware.Mixin.register('foo', {
+    it('should resolve mixins by explicit Mixin get by name call with override', async () => {
+        Shopware.Mixin.register('foo2', {
             methods: {
                 fooBar() {
                     return this.title;
@@ -144,33 +130,110 @@ describe('app/adapter/view/vue.adapter.js', () => {
             }
         });
 
-        Shopware.Component.register('test-component', {
+        Shopware.Component.register('test-component2', {
             template: '<div></div>',
-            name: 'test-component',
+            name: 'test-component2',
             data() {
                 return {
                     title: 'testComponent'
                 };
             },
             mixins: [
-                'foo'
+                Shopware.Mixin.getByName('foo2')
+            ],
+            methods: {
+                bar() {
+                    return 'bar';
+                }
+            }
+        });
+
+        Shopware.Component.override('test-component2', {
+            data() {
+                return {
+                    title: 'testComponentOverride'
+                };
+            },
+            methods: {
+                buz() {
+                    return 'buz';
+                }
+            }
+        });
+
+        const buildComp = (await vueAdapter.createComponent('test-component2'))();
+        const wrapper = shallowMount(await buildComp.component);
+
+        expect(wrapper.vm.fooBar).toBeDefined();
+        expect(wrapper.vm.bar).toBeDefined();
+        expect(wrapper.vm.buz).toBeDefined();
+        expect(wrapper.vm.fooBar()).toBe('testComponentOverride');
+        expect(wrapper.vm.bar()).toBe('bar');
+        expect(wrapper.vm.buz()).toBe('buz');
+    });
+
+    it('should resolve mixins by string', async () => {
+        Shopware.Mixin.register('foo3', {
+            methods: {
+                fooBar() {
+                    return this.title;
+                }
+            }
+        });
+
+        Shopware.Component.register('test-component3', {
+            template: '<div></div>',
+            name: 'test-component3',
+            data() {
+                return {
+                    title: 'testComponent3'
+                };
+            },
+            mixins: [
+                'foo3'
             ],
             methods: {
                 bar() {}
             }
         });
 
-        const buildComp = vueAdapter.createComponent('test-component');
-        let wrapper = shallowMount(buildComp);
+        const buildComp = (await vueAdapter.createComponent('test-component3'))();
+        const wrapper = shallowMount(await buildComp.component);
 
-        expect(buildComp.sealedOptions.methods.fooBar).toBeDefined();
-        expect(buildComp.sealedOptions.methods.bar).toBeDefined();
-        expect(wrapper.vm.fooBar()).toBe('testComponent');
+        expect(wrapper.vm.fooBar).toBeDefined();
+        expect(wrapper.vm.bar).toBeDefined();
+        expect(wrapper.vm.fooBar()).toBe('testComponent3');
+    });
 
-        Shopware.Component.override('test-component', {
+    it('should resolve mixins by string with override', async () => {
+        Shopware.Mixin.register('foo4', {
+            methods: {
+                fooBar() {
+                    return this.title;
+                }
+            }
+        });
+
+        Shopware.Component.register('test-component4', {
+            template: '<div></div>',
+            name: 'test-component4',
             data() {
                 return {
-                    title: 'testComponentOverride'
+                    title: 'testComponent4'
+                };
+            },
+            mixins: [
+                'foo4'
+            ],
+            methods: {
+                bar() {}
+            }
+        });
+
+        Shopware.Component.override('test-component4', {
+            data() {
+                return {
+                    title: 'testComponentOverride4'
                 };
             },
             methods: {
@@ -178,16 +241,16 @@ describe('app/adapter/view/vue.adapter.js', () => {
             }
         });
 
-        const buildOverrideComp = vueAdapter.createComponent('test-component');
-        wrapper = shallowMount(buildOverrideComp);
+        const buildComp = (await vueAdapter.createComponent('test-component4'))();
+        const wrapper = shallowMount(await buildComp.component);
 
-        expect(buildOverrideComp.sealedOptions.methods.fooBar).toBeDefined();
-        expect(buildOverrideComp.sealedOptions.methods.bar).toBeDefined();
-        expect(buildOverrideComp.sealedOptions.methods.buz).toBeDefined();
-        expect(wrapper.vm.fooBar()).toBe('testComponentOverride');
+        expect(wrapper.vm.fooBar).toBeDefined();
+        expect(wrapper.vm.bar).toBeDefined();
+        expect(wrapper.vm.buz).toBeDefined();
+        expect(wrapper.vm.fooBar()).toBe('testComponentOverride4');
     });
 
-    it('should resolve mixins for component in combination with overrides', () => {
+    it('should resolve mixins for component in combination with overrides', async () => {
         Shopware.Mixin.register('foo-with-data', {
             data() {
                 return {
@@ -220,25 +283,25 @@ describe('app/adapter/view/vue.adapter.js', () => {
             }
         });
 
-        const buildComp = vueAdapter.createComponent('test-component-foobar-with-mixin');
-        let wrapper = shallowMount(buildComp);
+        const buildComp = (await vueAdapter.createComponent('test-component-foobar-with-mixin'))();
+        let wrapper = shallowMount(await buildComp.component);
 
-        expect(buildComp.sealedOptions.methods.fooBar).toBeDefined();
-        expect(buildComp.sealedOptions.methods.bar).toBeDefined();
+        expect(wrapper.vm.fooBar).toBeDefined();
+        expect(wrapper.vm.bar).toBeDefined();
         expect(wrapper.vm.fooBar()).toBe('date');
 
         // add an override to the component
         Shopware.Component.override('test-component-foobar-with-mixin', {});
 
-        const buildOverrideComp = vueAdapter.createComponent('test-component-foobar-with-mixin');
-        wrapper = shallowMount(buildOverrideComp);
+        const buildOverrideComp = (await vueAdapter.createComponent('test-component-foobar-with-mixin'))();
+        wrapper = shallowMount(await buildOverrideComp.component);
 
-        expect(buildOverrideComp.sealedOptions.methods.fooBar).toBeDefined();
-        expect(buildOverrideComp.sealedOptions.methods.bar).toBeDefined();
+        expect(wrapper.vm.fooBar).toBeDefined();
+        expect(wrapper.vm.bar).toBeDefined();
         expect(wrapper.vm.fooBar()).toBe('date');
     });
 
-    it('should extend mixins', () => {
+    it('should extend mixins', async () => {
         Shopware.Mixin.register('swFoo', {
             methods: {
                 fooBar() {
@@ -291,18 +354,18 @@ describe('app/adapter/view/vue.adapter.js', () => {
             }
         });
 
-        const buildExtendedComponent = vueAdapter.createComponent('sw-test-component-extended');
-        const wrapper = shallowMount(buildExtendedComponent);
+        const buildComp = (await vueAdapter.createComponent('sw-test-component-extended'))();
+        const wrapper = shallowMount(await buildComp.component);
 
-        expect(buildExtendedComponent.sealedOptions.methods.fooBar).toBeDefined();
-        expect(buildExtendedComponent.sealedOptions.methods.bar).toBeDefined();
-        expect(buildExtendedComponent.sealedOptions.methods.biz).toBeDefined();
-        expect(buildExtendedComponent.sealedOptions.methods.buz).toBeDefined();
+        expect(wrapper.vm.fooBar).toBeDefined();
+        expect(wrapper.vm.bar).toBeDefined();
+        expect(wrapper.vm.biz).toBeDefined();
+        expect(wrapper.vm.buz).toBeDefined();
         expect(wrapper.vm.fooBar()).toBe('testComponentExtended');
         expect(wrapper.vm.buz()).toBe('component');
     });
 
-    it('should allow multi-inheritance with multiple mixins and lifecycle hooks are only executed once', () => {
+    it('should allow multi-inheritance with multiple mixins and lifecycle hooks are only executed once', async () => {
         const lifecycleSpy = jest.fn();
         Shopware.Mixin.register('first-mixin', {
             created() {
@@ -331,11 +394,11 @@ describe('app/adapter/view/vue.adapter.js', () => {
             mixins: ['second-mixin', 'first-mixin']
         });
 
-        const buildExtendedComponent = vueAdapter.createComponent('base-component');
-        const wrapper = shallowMount(buildExtendedComponent);
+        const buildComp = (await vueAdapter.createComponent('base-component'))();
+        const wrapper = shallowMount(await buildComp.component);
 
-        expect(buildExtendedComponent.sealedOptions.methods.foo).toBeDefined();
-        expect(buildExtendedComponent.sealedOptions.methods.bar).toBeDefined();
+        expect(wrapper.vm.foo).toBeDefined();
+        expect(wrapper.vm.bar).toBeDefined();
         expect(wrapper.vm.foo()).toBe('foo');
         expect(wrapper.vm.bar()).toBe('bar');
 

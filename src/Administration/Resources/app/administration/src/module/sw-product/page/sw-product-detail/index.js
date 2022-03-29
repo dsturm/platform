@@ -572,11 +572,6 @@ Component.register('sw-product-detail', {
                 if (!product.purchasePrices?.length > 0 && !product.parentId) {
                     product.purchasePrices = this.getDefaultPurchasePrices();
                 }
-                if (product.media) {
-                    product.media.forEach((medium, index) => {
-                        medium.position = index;
-                    });
-                }
 
                 Shopware.State.commit('swProductDetail/setProduct', product);
 
@@ -701,7 +696,7 @@ Component.register('sw-product-detail', {
                 return new Promise((res) => res());
             }
 
-            this.validateProductListPrices();
+            this.validateProductPrices();
 
             if (!this.productId) {
                 if (this.productNumberPreview === this.product.productNumber) {
@@ -724,6 +719,9 @@ Component.register('sw-product-detail', {
             return this.saveProduct().then(this.onSaveFinished);
         },
 
+        /**
+         * @deprecated tag:v6.5.0 - Will be removed, use validateProductPrices instead
+         */
         validateProductListPrices() {
             this.product.prices.forEach(advancedPrice => {
                 this.validateListPrices(advancedPrice.price);
@@ -731,6 +729,9 @@ Component.register('sw-product-detail', {
             this.validateListPrices(this.product.price);
         },
 
+        /**
+         * @deprecated tag:v6.5.0 - Will be removed, use validatePrices instead
+         */
         validateListPrices(prices) {
             if (!prices) {
                 return;
@@ -753,6 +754,44 @@ Component.register('sw-product-detail', {
 
                 if (!price.listPrice.net) {
                     price.listPrice.net = 0;
+                }
+            });
+        },
+
+        validateProductPrices() {
+            this.product.prices.forEach(advancedPrice => {
+                this.validatePrices('listPrice', advancedPrice.price);
+            });
+            this.validatePrices('listPrice', this.product.price);
+
+            this.product.prices.forEach(advancedPrice => {
+                this.validatePrices('regulationPrice', advancedPrice.price);
+            });
+            this.validatePrices('regulationPrice', this.product.price);
+        },
+
+        validatePrices(priceLabel, prices) {
+            if (!prices) {
+                return;
+            }
+
+            prices.forEach(price => {
+                if (!price[priceLabel]) {
+                    return;
+                }
+
+                if (!price[priceLabel].gross && !price[priceLabel].net) {
+                    price[priceLabel] = null;
+                    return;
+                }
+
+                if (!price[priceLabel].gross) {
+                    price[priceLabel].gross = 0;
+                    return;
+                }
+
+                if (!price[priceLabel].net) {
+                    price[priceLabel].net = 0;
                 }
             });
         },

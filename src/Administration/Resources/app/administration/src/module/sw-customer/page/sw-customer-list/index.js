@@ -190,7 +190,7 @@ Component.register('sw-customer-list', {
 
     methods: {
         createdComponent() {
-            this.loadFilterValues();
+            return this.loadFilterValues();
         },
 
         onInlineEditSave(promise, customer) {
@@ -223,6 +223,10 @@ Component.register('sw-customer-list', {
                 return;
             }
 
+            if (this.freshSearchTerm) {
+                newCriteria.resetSorting();
+            }
+
             try {
                 const items = await this.customerRepository.search(newCriteria);
 
@@ -249,6 +253,11 @@ Component.register('sw-customer-list', {
             return this.customerRepository.delete(id).then(() => {
                 this.getList();
             });
+        },
+
+        async onChangeLanguage() {
+            await this.createdComponent();
+            await this.getList();
         },
 
         getCustomerColumns() {
@@ -319,6 +328,13 @@ Component.register('sw-customer-list', {
             }, {
                 property: 'boundSalesChannelId',
                 label: 'sw-customer.list.columnBoundSalesChannel',
+                allowResize: true,
+                visible: false,
+                useCustomSort: true,
+            }, {
+                property: 'active',
+                inlineEdit: 'boolean',
+                label: 'sw-customer.list.columnActive',
                 allowResize: true,
                 visible: false,
                 useCustomSort: true,

@@ -334,7 +334,7 @@ describe('src/app/component/structure/sw-search-bar', () => {
         searchResults = wrapper.find('.sw-search-bar__results');
         typesContainer = wrapper.find('.sw-search-bar__types_container--v2');
 
-        expect(searchResults.exists()).toBe(false);
+        expect(searchResults.exists()).toBe(true);
         expect(typesContainer.exists()).toBe(false);
     });
 
@@ -1282,5 +1282,18 @@ describe('src/app/component/structure/sw-search-bar', () => {
                 name: 'Lightweight Iron Tossed Cookie Salad'
             }
         });
+    });
+
+    it('should set current search type correctly', async () => {
+        wrapper = await createWrapper({ initialSearchType: 'product' });
+
+        expect(wrapper.vm.isComponentMounted).toBe(true);
+        expect(wrapper.vm.currentSearchType).toBe('product');
+
+        await wrapper.setData({ searchTerm: '' });
+        wrapper.vm.resetSearchType();
+
+        expect(wrapper.vm.isComponentMounted).toBe(false);
+        expect(wrapper.vm.currentSearchType).toBe(null);
     });
 });

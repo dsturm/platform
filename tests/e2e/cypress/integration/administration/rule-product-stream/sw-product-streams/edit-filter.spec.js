@@ -247,7 +247,7 @@ describe('Dynamic product group: Test various filters', () => {
 
                     cy.get('.sw-product-stream-filter').as('currentProductStreamFilter');
 
-                    page.selectFieldAndOperator('@currentProductStreamFilter', 'Properties', 'Is equal to');
+                    page.selectFieldAndOperator('@currentProductStreamFilter', 'Property values', 'Is equal to');
 
                     cy.get('@currentProductStreamFilter').within(() => {
                         cy.get('.sw-select input').last().clearTypeAndCheck(resultCase.value);
@@ -283,7 +283,7 @@ describe('Dynamic product group: Test various filters', () => {
 
                     page.selectFieldAndOperator(
                         '@currentProductStreamFilter',
-                        'Properties',
+                        'Property values',
                         'Is equal to any of'
                     );
 
@@ -304,5 +304,28 @@ describe('Dynamic product group: Test various filters', () => {
                 });
             });
         });
+    });
+
+    it('@base @rule: Should be able switch operator from negated type to negated type', () => {
+        const page = new ProductStreamObject();
+
+        // Verify product stream details
+        cy.clickContextMenuItem(
+            '.sw-entity-listing__context-menu-edit-action',
+            page.elements.contextMenuButton,
+            `${page.elements.dataGridRow}--0`
+        );
+        cy.get(page.elements.loader).should('not.exist');
+        cy.get(page.elements.smartBarHeader).contains('1st Productstream');
+
+        cy.get('.sw-product-stream-filter').as('currentProductStreamFilter');
+
+        page.selectFieldAndOperator('@currentProductStreamFilter', 'Name', 'Is equal to')
+
+        cy.get('.sw-product-stream-value__operator-select .sw-single-select')
+            .typeSingleSelectAndCheck('Is not equal to', '.sw-product-stream-value__operator-select .sw-single-select');
+
+        cy.get('.sw-product-stream-value__operator-select .sw-single-select')
+            .typeSingleSelectAndCheck('Does not contain', '.sw-product-stream-value__operator-select .sw-single-select');
     });
 });

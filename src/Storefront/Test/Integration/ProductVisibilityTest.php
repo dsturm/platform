@@ -13,6 +13,7 @@ use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Test\IdsCollection;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
@@ -92,6 +93,8 @@ class ProductVisibilityTest extends TestCase
      */
     private $searchKeywordUpdater;
 
+    private IdsCollection $ids;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -106,6 +109,7 @@ class ProductVisibilityTest extends TestCase
         $this->searchKeywordUpdater = $this->getContainer()->get(SearchKeywordUpdater::class);
         $this->resetSearchKeywordUpdaterConfig();
 
+        $this->ids = new IdsCollection();
         $this->insertData();
     }
 
@@ -215,15 +219,13 @@ class ProductVisibilityTest extends TestCase
 
     private function insertData(): void
     {
-        $this->salesChannelId1 = $this->createSalesChannel();
-        $this->salesChannelId2 = $this->createSalesChannel();
-
-        $this->categoryId = Uuid::randomHex();
-
-        $this->productId1 = Uuid::randomHex();
-        $this->productId2 = Uuid::randomHex();
-        $this->productId3 = Uuid::randomHex();
-        $this->productId4 = Uuid::randomHex();
+        $this->salesChannelId1 = $this->createSalesChannel('sales-1');
+        $this->salesChannelId2 = $this->createSalesChannel('sales-2');
+        $this->categoryId = $this->ids->get('category');
+        $this->productId1 = $this->ids->get('product-1');
+        $this->productId2 = $this->ids->get('product-2');
+        $this->productId3 = $this->ids->get('product-3');
+        $this->productId4 = $this->ids->get('product-4');
 
         $products = [
             $this->createProduct($this->productId1, [
@@ -269,9 +271,9 @@ class ProductVisibilityTest extends TestCase
         ];
     }
 
-    private function createSalesChannel(): string
+    private function createSalesChannel(string $key): string
     {
-        $id = Uuid::randomHex();
+        $id = $this->ids->create($key);
 
         $snippetSetId = (string) $this->getContainer()->get(Connection::class)
             ->fetchColumn('SELECT id FROM snippet_set LIMIT 1');

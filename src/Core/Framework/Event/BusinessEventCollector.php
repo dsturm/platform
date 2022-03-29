@@ -4,7 +4,7 @@ namespace Shopware\Core\Framework\Event;
 
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Feature;
-use Shopware\Core\Framework\Log\LogAwareBusinessEventInterface;
+use Shopware\Core\Framework\Log\LogAware;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class BusinessEventCollector
@@ -88,7 +88,7 @@ class BusinessEventCollector
         foreach ($interfaces as $interface) {
             if (is_subclass_of($interface, FlowEventAware::class)
                 && $interface !== FlowEventAware::class
-                && !is_subclass_of($interface, BusinessEventInterface::class)
+                && $interface !== MailActionInterface::class
                 && $interface !== BusinessEventInterface::class) {
                 $aware[] = $interface;
             }
@@ -98,7 +98,7 @@ class BusinessEventCollector
             $name,
             $class,
             $instance instanceof MailActionInterface,
-            $instance instanceof LogAwareBusinessEventInterface,
+            $instance instanceof LogAware,
             $instance instanceof SalesChannelAware,
             $instance::getAvailableData()->toArray(),
             $aware

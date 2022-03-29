@@ -18,10 +18,11 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Country\CountryDefinition;
 use Shopware\Core\System\Country\CountryEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\Cache\Adapter\TagAwareAdapterInterface;
+use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
-class CartRuleLoader
+class CartRuleLoader implements ResetInterface
 {
     private const MAX_ITERATION = 7;
 
@@ -33,7 +34,7 @@ class CartRuleLoader
 
     private LoggerInterface $logger;
 
-    private TagAwareAdapterInterface $cache;
+    private CacheInterface $cache;
 
     private AbstractRuleLoader $ruleLoader;
 
@@ -49,7 +50,7 @@ class CartRuleLoader
         CartPersisterInterface $cartPersister,
         Processor $processor,
         LoggerInterface $logger,
-        TagAwareAdapterInterface $cache,
+        CacheInterface $cache,
         AbstractRuleLoader $loader,
         TaxDetector $taxDetector,
         Connection $connection,
@@ -79,15 +80,20 @@ class CartRuleLoader
         }
     }
 
-    public function loadByCart(SalesChannelContext $context, Cart $cart, CartBehavior $behaviorContext): RuleLoaderResult
+    public function loadByCart(SalesChannelContext $context, Cart $cart, CartBehavior $behaviorContext, bool $isNew = false): RuleLoaderResult
     {
-        return $this->load($context, $cart, $behaviorContext, false);
+        return $this->load($context, $cart, $behaviorContext, $isNew);
     }
 
     public function reset(): void
     {
         $this->rules = null;
-        $this->cache->deleteItem(CachedRuleLoader::CACHE_KEY);
+    }
+
+    public function invalidate(): void
+    {
+        $this->reset();
+        $this->cache->delete(CachedRuleLoader::CACHE_KEY);
     }
 
     private function load(SalesChannelContext $context, Cart $cart, CartBehavior $behaviorContext, bool $new): RuleLoaderResult

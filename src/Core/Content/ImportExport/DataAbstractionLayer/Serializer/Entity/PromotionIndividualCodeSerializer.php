@@ -11,8 +11,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Symfony\Contracts\Service\ResetInterface;
 
-class PromotionIndividualCodeSerializer extends EntitySerializer
+class PromotionIndividualCodeSerializer extends EntitySerializer implements ResetInterface
 {
     private EntityRepositoryInterface $promoCodeRepository;
 
@@ -52,6 +53,11 @@ class PromotionIndividualCodeSerializer extends EntitySerializer
             }
         }
 
+        // set promotion id to prevent failures
+        if (empty($deserialized['promotion']['id']) && isset($deserialized['promotionId'])) {
+            $deserialized['promotion']['id'] = $deserialized['promotionId'];
+        }
+
         // set promotion useIndividualCodes to true if not specified otherwise
         // this ensures that the imported codes are needed for the promotion
         if (!isset($deserialized['promotion']['useIndividualCodes'])) {
@@ -76,6 +82,12 @@ class PromotionIndividualCodeSerializer extends EntitySerializer
         }
 
         yield from $deserialized;
+    }
+
+    public function reset(): void
+    {
+        $this->cachePromoCodeIds = [];
+        $this->cachePromoIds = [];
     }
 
     private function getPromoIdFromName(string $promotionName): ?string

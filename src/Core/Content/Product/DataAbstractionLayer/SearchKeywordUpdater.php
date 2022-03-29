@@ -24,8 +24,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NandFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Language\LanguageCollection;
 use Shopware\Core\System\Language\LanguageEntity;
+use Symfony\Contracts\Service\ResetInterface;
 
-class SearchKeywordUpdater
+class SearchKeywordUpdater implements ResetInterface
 {
     private Connection $connection;
 
@@ -34,8 +35,6 @@ class SearchKeywordUpdater
     private EntityRepositoryInterface $productRepository;
 
     private ProductSearchKeywordAnalyzerInterface $analyzer;
-
-    private EntityRepositoryInterface $productSearchConfigFieldRepository;
 
     /**
      * @var array[]
@@ -46,14 +45,12 @@ class SearchKeywordUpdater
         Connection $connection,
         EntityRepositoryInterface $languageRepository,
         EntityRepositoryInterface $productRepository,
-        ProductSearchKeywordAnalyzerInterface $analyzer,
-        EntityRepositoryInterface $productSearchConfigFieldRepository
+        ProductSearchKeywordAnalyzerInterface $analyzer
     ) {
         $this->connection = $connection;
         $this->languageRepository = $languageRepository;
         $this->productRepository = $productRepository;
         $this->analyzer = $analyzer;
-        $this->productSearchConfigFieldRepository = $productSearchConfigFieldRepository;
     }
 
     public function update(array $ids, Context $context): void
@@ -85,15 +82,17 @@ class SearchKeywordUpdater
         }
     }
 
+    public function reset(): void
+    {
+        $this->config = [];
+    }
+
     /**
      * @return ProductEntity[]
      */
     private function updateLanguage(array $ids, Context $context, array $existingProducts): array
     {
-        $configFields = [];
-        if ($this->productSearchConfigFieldRepository !== null) {
-            $configFields = $this->getConfigFields($context->getLanguageId());
-        }
+        $configFields = $this->getConfigFields($context->getLanguageId());
 
         $versionId = Uuid::fromHexToBytes($context->getVersionId());
         $languageId = Uuid::fromHexToBytes($context->getLanguageId());

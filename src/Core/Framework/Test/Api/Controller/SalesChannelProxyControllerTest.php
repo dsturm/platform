@@ -5,6 +5,7 @@ namespace Shopware\Core\Framework\Test\Api\Controller;
 use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Checkout\Cart\CartPersister;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Promotion\Aggregate\PromotionDiscount\PromotionDiscountEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
@@ -104,7 +105,7 @@ class SalesChannelProxyControllerTest extends TestCase
         $this->customerRepository = $this->getContainer()->get('customer.repository');
         $this->connection = $this->getContainer()->get(Connection::class);
         $eventDispatcher = new EventDispatcher();
-        $this->contextPersister = new SalesChannelContextPersister($this->connection, $eventDispatcher);
+        $this->contextPersister = new SalesChannelContextPersister($this->connection, $eventDispatcher, $this->getContainer()->get(CartPersister::class));
         $this->ids = new TestDataCollection($this->context);
     }
 
@@ -339,6 +340,43 @@ class SalesChannelProxyControllerTest extends TestCase
         static::assertIsArray($payload);
         static::assertArrayHasKey('customerId', $payload);
         static::assertEquals($customerId, $payload['customerId']);
+    }
+
+    public function testSwitchCustomerWithPermissions(): void
+    {
+        $salesChannel = $this->createSalesChannel();
+
+        $salesChannelContextFactory = $this->getContainer()->get(SalesChannelContextFactory::class);
+        $salesChannelContext = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+        $customerId = $this->createCustomer($salesChannelContext, 'info@example.com', 'shopware');
+
+        $permissions = [
+            'allowProductPriceOverwrites',
+            'allowProductLabelOverwrites',
+            'skipProductRecalculation',
+            'skipDeliveryPriceRecalculation',
+            'skipDeliveryTaxRecalculation',
+            'skipPromotion',
+            'skipAutomaticPromotions',
+            'skipProductStockValidation',
+            'keepInactiveProduct',
+        ];
+
+        $browser = $this->createCart($salesChannel['id']);
+
+        $browser->request('PATCH', $this->getRootProxyUrl('/switch-customer'), [
+            'salesChannelId' => $salesChannel['id'],
+            'customerId' => $customerId,
+            'permissions' => $permissions,
+        ]);
+
+        $response = $this->getBrowser()->getResponse();
+
+        //assert permissions exist in payload
+        $payload = $this->contextPersister->load($response->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN), $salesChannel['id']);
+        static::assertIsArray($payload);
+        static::assertArrayHasKey('permissions', $payload);
+        static::assertEqualsCanonicalizing(\array_fill_keys($permissions, true), $payload['permissions']);
     }
 
     public function testModifyShippingCostsWithoutChannelId(): void
@@ -1062,6 +1100,7 @@ class SalesChannelProxyControllerTest extends TestCase
             static::assertSame('credit', $cart['lineItems'][1]['type']);
 
             $orderPrivileges = [
+                'api_proxy_switch-customer',
                 'order:create',
                 'order_customer:create',
                 'order_address:create',
@@ -1075,14 +1114,14 @@ class SalesChannelProxyControllerTest extends TestCase
             foreach ([true, false] as $testOrderOnly) {
                 TestUser::createNewTestUser(
                     $browser->getContainer()->get(Connection::class),
-                    $testOrderOnly ? $orderPrivileges : [CreditOrderLineItemListener::ACL_ORDER_CREATE_DISCOUNT_PRIVILEGE],
+                    $testOrderOnly ? $orderPrivileges : ['api_proxy_switch-customer', CreditOrderLineItemListener::ACL_ORDER_CREATE_DISCOUNT_PRIVILEGE],
                 )->authorizeBrowser($browser);
                 $browser->request('POST', $this->getCreateOrderApiUrl($salesChannelContext->getSalesChannel()->getId()));
 
                 $response = $browser->getResponse()->getContent();
                 $response = json_decode($response, true);
 
-                static::assertArrayHasKey('errors', $response);
+                static::assertArrayHasKey('errors', $response, print_r($response, true));
                 static::assertEquals('FRAMEWORK__MISSING_PRIVILEGE_ERROR', $response['errors'][0]['code'] ?? null);
                 static::assertStringContainsString(
                     $testOrderOnly ? CreditOrderLineItemListener::ACL_ORDER_CREATE_DISCOUNT_PRIVILEGE : 'order_line_item:create',

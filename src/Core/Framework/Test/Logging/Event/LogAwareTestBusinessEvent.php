@@ -6,6 +6,9 @@ use Monolog\Logger;
 use Shopware\Core\Framework\Log\LogAwareBusinessEventInterface;
 use Shopware\Core\Framework\Test\Event\TestBusinessEvent;
 
+/**
+ * @deprecated tag:v6.5.0 - Class is deprecated, use LogAwareTestFlowEvent instead.
+ */
 class LogAwareTestBusinessEvent extends TestBusinessEvent implements LogAwareBusinessEventInterface
 {
     public const EVENT_NAME = 'test.business_event.log_aware';

@@ -19,6 +19,8 @@ use Shopware\Core\Content\Flow\Dispatching\Action\SendMailAction;
 use Shopware\Core\Content\Flow\Dispatching\FlowState;
 use Shopware\Core\Content\Flow\Events\FlowSendMailActionEvent;
 use Shopware\Core\Content\Mail\Service\MailService as EMailService;
+use Shopware\Core\Content\MailTemplate\Exception\MailEventConfigurationException;
+use Shopware\Core\Content\MailTemplate\MailTemplateEntity;
 use Shopware\Core\Content\MailTemplate\Service\Event\MailBeforeSentEvent;
 use Shopware\Core\Content\MailTemplate\Service\Event\MailBeforeValidateEvent;
 use Shopware\Core\Content\MailTemplate\Subscriber\MailSendSubscriber;
@@ -35,7 +37,7 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\DataBag;
 use Shopware\Core\System\Locale\LanguageLocaleCodeProvider;
-use Shopware\Core\System\StateMachine\StateMachineRegistry;
+use Shopware\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopware\Core\Test\TestDefaults;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -103,7 +105,8 @@ class SendMailActionTest extends TestCase
             $this->getContainer()->get('mail_template_type.repository'),
             $this->getContainer()->get(Translator::class),
             $this->getContainer()->get(Connection::class),
-            $this->getContainer()->get(LanguageLocaleCodeProvider::class)
+            $this->getContainer()->get(LanguageLocaleCodeProvider::class),
+            true
         );
 
         $mailFilterEvent = null;
@@ -131,6 +134,7 @@ class SendMailActionTest extends TestCase
             default:
                 static::assertEquals($mailService->data['recipients'], [$order->getOrderCustomer()->getEmail() => $order->getOrderCustomer()->getFirstName() . ' ' . $order->getOrderCustomer()->getLastName()]);
         }
+
         if ($hasFlowSettingAttachment) {
             $criteria = new Criteria([$documentIdOlder, $documentIdNewer]);
             $documents = $documentRepository->search($criteria, $context);
@@ -157,6 +161,201 @@ class SendMailActionTest extends TestCase
         yield 'Test send mail without attachments' => [['type' => 'customer'], false];
         yield 'Test send mail with attachments from order setting' => [['type' => 'customer'], false, true];
         yield 'Test send mail with attachments from order setting and flow setting ' => [['type' => 'customer'], true, true];
+    }
+
+    public function testUpdateMailTemplateTypeWithMailTemplateTypeIdIsNull(): void
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        $context = Context::createDefaultContext();
+
+        $context->addExtension(MailSendSubscriber::MAIL_CONFIG_EXTENSION, new MailSendSubscriberConfig(false, [], []));
+
+        $mailTemplateId = $this->getContainer()
+            ->get('mail_template.repository')
+            ->searchIds($criteria, $context)
+            ->firstId();
+
+        $this->getContainer()->get(Connection::class)->executeStatement(
+            'UPDATE mail_template SET mail_template_type_id = null WHERE id =:id',
+            [
+                'id' => Uuid::fromHexToBytes($mailTemplateId),
+            ]
+        );
+
+        static::assertNotEmpty($mailTemplateId);
+
+        $config = array_filter([
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => [
+                'type' => 'admin',
+                'data' => [
+                    'phuoc.cao@shopware.com' => 'shopware',
+                    'phuoc.cao.x@shopware.com' => 'shopware',
+                ],
+            ],
+        ]);
+
+        $event = new ContactFormEvent($context, Defaults::SALES_CHANNEL, new MailRecipientStruct(['test@example.com' => 'Shopware ag']), new DataBag());
+
+        $mailService = new TestEmailService();
+        $subscriber = new SendMailAction(
+            $mailService,
+            $this->getContainer()->get('mail_template.repository'),
+            $this->getContainer()->get(MediaService::class),
+            $this->getContainer()->get('media.repository'),
+            $this->getContainer()->get('document.repository'),
+            $this->getContainer()->get(DocumentService::class),
+            $this->getContainer()->get('logger'),
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get('mail_template_type.repository'),
+            $this->getContainer()->get(Translator::class),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get(LanguageLocaleCodeProvider::class),
+            true
+        );
+
+        $mailFilterEvent = null;
+        $this->getContainer()->get('event_dispatcher')->addListener(FlowSendMailActionEvent::class, static function ($event) use (&$mailFilterEvent): void {
+            $mailFilterEvent = $event;
+        });
+
+        $subscriber->handle(new FlowEvent('test', new FlowState($event), $config));
+
+        static::assertIsObject($mailFilterEvent);
+        static::assertEquals(1, $mailService->calls);
+    }
+
+    public function testSendMailWithConfigIsNull(): void
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        $context = Context::createDefaultContext();
+
+        $context->addExtension(MailSendSubscriber::MAIL_CONFIG_EXTENSION, new MailSendSubscriberConfig(false, [], []));
+
+        $mailTemplateId = $this->getContainer()
+            ->get('mail_template.repository')
+            ->searchIds($criteria, $context)
+            ->firstId();
+
+        static::assertNotEmpty($mailTemplateId);
+
+        $config = array_filter([
+            'mailTemplateId' => $mailTemplateId,
+            'recipient' => [],
+        ]);
+
+        $event = new ContactFormEvent($context, Defaults::SALES_CHANNEL, new MailRecipientStruct(['test@example.com' => 'Shopware ag']), new DataBag());
+
+        $mailService = new TestEmailService();
+        $subscriber = new SendMailAction(
+            $mailService,
+            $this->getContainer()->get('mail_template.repository'),
+            $this->getContainer()->get(MediaService::class),
+            $this->getContainer()->get('media.repository'),
+            $this->getContainer()->get('document.repository'),
+            $this->getContainer()->get(DocumentService::class),
+            $this->getContainer()->get('logger'),
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get('mail_template_type.repository'),
+            $this->getContainer()->get(Translator::class),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get(LanguageLocaleCodeProvider::class),
+            true
+        );
+
+        $mailFilterEvent = null;
+        $this->getContainer()->get('event_dispatcher')->addListener(FlowSendMailActionEvent::class, static function ($event) use (&$mailFilterEvent): void {
+            $mailFilterEvent = $event;
+        });
+
+        static::expectException(MailEventConfigurationException::class);
+        static::expectExceptionMessage('The recipient value in the flow action configuration is missing.');
+        $subscriber->handle(new FlowEvent('test', new FlowState($event), $config));
+
+        static::assertIsObject($mailFilterEvent);
+        static::assertEquals(1, $mailService->calls);
+    }
+
+    /**
+     * @dataProvider updateTemplateDataProvider
+     */
+    public function testUpdateTemplateData(bool $shouldUpdate): void
+    {
+        $criteria = new Criteria();
+        $criteria->setLimit(1);
+
+        $context = Context::createDefaultContext();
+
+        $mailTemplate = $this->getContainer()
+            ->get('mail_template.repository')
+            ->search($criteria, $context)
+            ->first();
+
+        $this->getContainer()->get(Connection::class)->executeStatement('UPDATE mail_template_type SET template_data = NULL');
+
+        static::assertInstanceOf(MailTemplateEntity::class, $mailTemplate);
+
+        $config = array_filter([
+            'mailTemplateId' => $mailTemplate->getId(),
+            'recipient' => [
+                'type' => 'admin',
+                'data' => [
+                    'phuoc.cao@shopware.com' => 'shopware',
+                    'phuoc.cao.x@shopware.com' => 'shopware',
+                ],
+            ],
+        ]);
+
+        $event = new ContactFormEvent($context, Defaults::SALES_CHANNEL, new MailRecipientStruct(['test@example.com' => 'Shopware ag']), new DataBag());
+
+        $mailService = new TestEmailService();
+
+        $subscriber = new SendMailAction(
+            $mailService,
+            $this->getContainer()->get('mail_template.repository'),
+            $this->getContainer()->get(MediaService::class),
+            $this->getContainer()->get('media.repository'),
+            $this->getContainer()->get('document.repository'),
+            $this->getContainer()->get(DocumentService::class),
+            $this->getContainer()->get('logger'),
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get('mail_template_type.repository'),
+            $this->getContainer()->get(Translator::class),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get(LanguageLocaleCodeProvider::class),
+            $shouldUpdate
+        );
+
+        $mailFilterEvent = null;
+        $this->getContainer()->get('event_dispatcher')->addListener(FlowSendMailActionEvent::class, static function ($event) use (&$mailFilterEvent): void {
+            $mailFilterEvent = $event;
+        });
+
+        $subscriber->handle(new FlowEvent('test', new FlowState($event), $config));
+
+        static::assertIsObject($mailFilterEvent);
+        static::assertEquals(1, $mailService->calls);
+
+        $data = $this->getContainer()->get(Connection::class)->fetchOne(
+            'SELECT template_data FROM mail_template_type WHERE id = :id',
+            ['id' => Uuid::fromHexToBytes($mailTemplate->getMailTemplateTypeId())]
+        );
+
+        if ($shouldUpdate) {
+            static::assertNotNull($data);
+        } else {
+            static::assertNull($data);
+        }
+    }
+
+    public function updateTemplateDataProvider()
+    {
+        yield 'Test disable mail template updates' => [false];
+        yield 'Test enable mail template updates' => [true];
     }
 
     public function testTranslatorInjectionInMail(): void
@@ -207,6 +406,7 @@ class SendMailActionTest extends TestCase
             $translator,
             $this->getContainer()->get(Connection::class),
             $this->getContainer()->get(LanguageLocaleCodeProvider::class),
+            true
         );
 
         $mailFilterEvent = null;
@@ -269,7 +469,7 @@ class SendMailActionTest extends TestCase
     private function createOrder(string $customerId, Context $context): string
     {
         $orderId = Uuid::randomHex();
-        $stateId = $this->getContainer()->get(StateMachineRegistry::class)->getInitialState(OrderStates::STATE_MACHINE, $context)->getId();
+        $stateId = $this->getContainer()->get(InitialStateIdLoader::class)->get(OrderStates::STATE_MACHINE);
         $billingAddressId = Uuid::randomHex();
 
         $order = [

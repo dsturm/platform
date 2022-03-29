@@ -1,3 +1,4 @@
+/* stylelint-disable max-nesting-depth */
 @import "~scss/variables";
 
 $sw-tree-item-color-border: $color-gray-300;
@@ -191,7 +192,7 @@ $sw-tree-item-color-text: $color-darkgray-200;
 
     .sw-tree-item__children {
         position: relative;
-        padding-left: 32px;
+        padding-left: 24px;
 
         .sw-tree-item {
             &.is--no-children > .sw-tree-item__element {

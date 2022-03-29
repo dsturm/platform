@@ -92,7 +92,7 @@
                 <sw-checkbox-field
                     v-model="customer.active"
                     class="sw-customer-base-info__checkbox-field"
-                    :label="$tc('sw-customer.baseInfo.contentActive', customer.active)"
+                    :label="$tc('sw-customer.baseInfo.contentActive')"
                     size="small"
                 />
             </dd>
@@ -201,7 +201,9 @@
                 {{ $tc('sw-customer.baseInfo.labelTurnover') }}
             </dt>
             {# price aggregations do not support currencies yet, see NEXT-5069 #}
-            <dd>{{ orderAmount | currency('EUR') }}</dd>
+            <dd class="sw-customer-base__label-turnover">
+                {{ orderAmount | currency('EUR') }}
+            </dd>
         </sw-description-list>
         {% endblock %}
 

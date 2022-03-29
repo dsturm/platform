@@ -155,7 +155,6 @@ Component.register('sw-customer-detail', {
                 this.defaultCriteria,
             ).then((customer) => {
                 this.customer = customer;
-                this.customer.vatIds = this.customer.vatIds || [];
                 this.isLoading = false;
             });
         },
@@ -248,6 +247,19 @@ Component.register('sw-customer-detail', {
 
         onActivateCustomerEditMode() {
             this.editMode = true;
+        },
+
+        abortOnLanguageChange() {
+            return this.customerRepository.hasChanges(this.customer);
+        },
+
+        saveOnLanguageChange() {
+            return this.onSave();
+        },
+
+        onChangeLanguage(languageId) {
+            Shopware.State.commit('context/setApiLanguageId', languageId);
+            this.createdComponent();
         },
 
         async validPassword(customer) {

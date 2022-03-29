@@ -21,6 +21,7 @@ use Shopware\Core\Framework\Test\Adapter\Twig\fixtures\BundleFixture;
 use Shopware\Core\Framework\Test\Api\Controller\fixtures\AdminExtensionApiPlugin;
 use Shopware\Core\Framework\Test\Api\Controller\fixtures\AdminExtensionApiPluginWithLocalEntryPoint\AdminExtensionApiPluginWithLocalEntryPoint;
 use Shopware\Core\Framework\Test\App\AppSystemTestBehaviour;
+use Shopware\Core\Framework\Test\IdsCollection;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopware\Core\Kernel;
 use Symfony\Component\Asset\Package;
@@ -67,6 +68,8 @@ class InfoControllerTest extends TestCase
         if (!Feature::isActive('FEATURE_NEXT_17950')) {
             static::markTestSkipped('Only available with flag FEATURE_NEXT_17950');
         }
+
+        $ids = new IdsCollection();
         $appRepository = $this->getContainer()->get('app.repository');
         $appRepository->create([
             [
@@ -77,6 +80,7 @@ class InfoControllerTest extends TestCase
                 'version' => '1.0.0',
                 'label' => 'PHPUnit',
                 'integration' => [
+                    'id' => $ids->create('integration'),
                     'label' => 'foo',
                     'accessKey' => '123',
                     'secretAccessKey' => '456',
@@ -98,6 +102,8 @@ class InfoControllerTest extends TestCase
         static::assertIsString($appUrl);
 
         $bundle = [
+            'active' => true,
+            'integrationId' => $ids->get('integration'),
             'type' => 'app',
             'baseUrl' => 'https://example.com',
             'permissions' => [
@@ -185,7 +191,7 @@ class InfoControllerTest extends TestCase
             [
                 'name' => 'checkout.customer.login',
                 'class' => "Shopware\Core\Checkout\Customer\Event\CustomerLoginEvent",
-                'mailAware' => false,
+                'mailAware' => true,
                 'logAware' => false,
                 'salesChannelAware' => true,
                 'extensions' => [],
@@ -200,6 +206,7 @@ class InfoControllerTest extends TestCase
                 ],
                 'aware' => [
                     SalesChannelAware::class,
+                    MailAware::class,
                     CustomerAware::class,
                 ],
             ],
@@ -391,6 +398,31 @@ class InfoControllerTest extends TestCase
             static::assertNotEmpty($actualActions, 'Event with name "' . $action['name'] . '" not found');
             static::assertCount(1, $actualActions);
             static::assertEquals($action, $actualActions[0]);
+        }
+    }
+
+    public function testMailAwareBusinessEventRoute(): void
+    {
+        $url = '/api/_info/events.json';
+        $client = $this->getBrowser();
+        $client->request('GET', $url);
+
+        static::assertJson($client->getResponse()->getContent());
+
+        $response = json_decode($client->getResponse()->getContent(), true);
+
+        static::assertSame(200, $client->getResponse()->getStatusCode());
+
+        foreach ($response as $event) {
+            if ($event['name'] === 'mail.after.create.message' || $event['name'] === 'mail.before.send' || $event['name'] === 'mail.sent') {
+                static::assertFalse($event['mailAware']);
+                static::assertFalse(\in_array('Shopware\Core\Framework\Event\MailAware', $event['aware'], true));
+
+                continue;
+            }
+            static::assertTrue($event['mailAware']);
+            static::assertTrue(\in_array('Shopware\Core\Framework\Event\MailAware', $event['aware'], true));
+            static::assertFalse(\in_array('Shopware\Core\Framework\Event\MailActionInterface', $event['aware'], true));
         }
     }
 }

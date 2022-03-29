@@ -52,6 +52,10 @@
     </template>
     {% endblock %}
 
+    <template #language-switch>
+        <sw-language-switch @on-change="onChangeLanguage" />
+    </template>
+
     <template #content>
         {% block sw_customer_list_content %}
         <div class="sw-customer-list__content">
@@ -64,7 +68,7 @@
                 :items="customers"
                 :columns="customerColumns"
                 :repository="customerRepository"
-                :sort-by="sortBy"
+                :sort-by="currentSortBy"
                 :sort-direction="sortDirection"
                 detail-route="sw.customer.detail"
                 :show-selection="acl.can('customer.deleter')"
@@ -161,6 +165,33 @@
                 {% block sw_customer_list_grid_columns_boundSalesChannel %}
                 <template #column-boundSalesChannelId="{ item }">
                     {{ item.boundSalesChannelId ? item.salesChannel.translated.name : $tc('sw-customer.list.emptyBoundSalesChannel') }}
+                </template>
+                {% endblock %}
+
+                {% block sw_customer_list_grid_columns_active %}
+                <template #column-active="{ item, isInlineEdit }">
+                    {% block sw_customer_list_grid_columns_active_inline_edit %}
+                    <template v-if="isInlineEdit">
+                        <sw-checkbox-field v-model="item.active" />
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_customer_list_grid_columns_active_content %}
+                    <template v-else>
+                        <sw-icon
+                            v-if="item.active"
+                            name="small-default-checkmark-line-medium"
+                            small
+                            class="is--active"
+                        />
+                        <sw-icon
+                            v-else
+                            name="small-default-x-line-medium"
+                            small
+                            class="is--inactive"
+                        />
+                    </template>
+                    {% endblock %}
                 </template>
                 {% endblock %}
 

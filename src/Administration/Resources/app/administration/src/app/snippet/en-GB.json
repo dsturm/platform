@@ -188,7 +188,10 @@
     "sw-list-price-field": {
       "labelListPriceGross": "List price (gross)",
       "helpTextListPriceGross": "List prices indicate a discounted product. List prices are denoted as the \"original\" price which is crossed out and coloured in red. The actual and discounted price will be displayed alongside in the default text colour.",
-      "labelListPriceNet": "List price (net)"
+      "labelListPriceNet": "List price (net)",
+      "labelRegulationPriceGross": "Cheapest price (last 30 days, gross)",
+      "helpTextRegulationPriceGross": "You must fill in this field if you want to advertise price reductions in your store in the EU. Such information should be verifiable by the customers. Therefore, in the case of price reductions, in addition to the price reduction on the current price, the lowest price of the goods in the last 30 days before the price reduction must also be indicated. This is prescribed in Art. 6 a of Directive 98/6/EC.",
+      "labelRegulationPriceNet": "Cheapest price (last 30 days, net)"
     },
     "sw-text-editor": {
       "labelTextLength": "{count} character | {count} characters"
@@ -568,6 +571,7 @@
     },
     "sw-condition": {
       "operator": {
+        "placeholder": "Select operator...",
         "lowerThanEquals": "Is lower than / equal to",
         "equals": "Is equal to",
         "greaterThanEquals": "Is greater than / equal to",
@@ -606,6 +610,11 @@
         "isNewCustomerRule": "New customer",
         "lastNameRule": "Customer surname",
         "isCompanyRule": "Commercial customer",
+        "cartTaxDisplay": {
+          "label": "Tax display",
+          "gross": "Gross",
+          "net": "Net"
+        },
         "isGuestRule": "Guest account",
         "isNewsletterRecipient": "Customer is newsletter recipient",
         "daysSinceLastOrderRule": "Days since last order",
@@ -670,6 +679,7 @@
         "lineItemClearanceSale": "Item with clearance sale",
         "lineItemPromotedRule": "Item is promoted",
         "lineItemInCategoryRule": "Item in category",
+        "categoryWithProductStreamTooltip": "Products in this category are assigned by a dynamic product group. Please use the condition \"Item in dynamic product group\" to dynamically access these products.",
         "lineItemInProductStreamRule": "Item in dynamic product group",
         "lineItemTaxationRule": "Item with tax rate",
         "lineItemDimensionWidthRule": "Item with width",
@@ -899,8 +909,19 @@
       "buttonVariantSecondary": "Secondary",
       "buttonVariantPrimarySmall": "Primary (small)",
       "buttonVariantSecondarySmall": "Secondary (small)",
+      "linkTo": "Link to",
       "placeholder": "Enter URL...",
-      "linkTo": "Link to"
+      "labelUrl": "URL",
+      "labelType": "Type",
+      "labelLink": "Link",
+      "labelProduct": "Product",
+      "labelCategory":"Category",
+      "labelEmail": "Email address",
+      "labelPhoneNumber": "Phone number",
+      "placeholderPhoneNumber": "Enter phone number...",
+      "placeholderEmail": "Enter email address...",
+      "placeholderProduct": "Select a product...",
+      "placeholderCategory": "Select a category..."
     },
     "table": {
       "addHeading": "Add table heading",
@@ -1137,7 +1158,8 @@
   "sw-maintain-currencies-modal": {
     "title": "Currency dependent pricing",
     "columnPrice": "Prices (gross / net)",
-    "columnListPriceHeader": "List prices (gross / net)"
+    "columnListPriceHeader": "List prices (gross / net)",
+    "columnReferencePriceHeader": "Cheapest price (last 30 days, gross / net)"
   },
   "sw-privileges": {
     "tooltip": {

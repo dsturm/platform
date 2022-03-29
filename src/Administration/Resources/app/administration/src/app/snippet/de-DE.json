@@ -188,7 +188,10 @@
     "sw-list-price-field": {
       "labelListPriceGross": "Streichpreis (Brutto)",
       "helpTextListPriceGross": "Streichpreise weisen auf ein preisreduziertes Produkt hin. Der Streichpreis zeigt den ursprünglichen Preis als durchgestrichenen, roten Text an. Der gültige Preis wird daneben in der Standardtextfarbe dargestellt.",
-      "labelListPriceNet": "Streichpreis (Netto)"
+      "labelListPriceNet": "Streichpreis (Netto)",
+      "labelRegulationPriceGross": "Günstigster Preis (letzten 30 Tage, Brutto)",
+      "helpTextRegulationPriceGross": "Dieses Feld musst Du ausfüllen, wenn Du in der EU mit Preisermäßigungen in Deinem Shop werben möchtest. Diese Angaben sollen von Kunden in der EU überprüft werden können. Bei Preisermäßigungen muss deshalb neben der Preisermäßigung auf den aktuellen Preis auch der niedrigste Preis der Ware in den letzten 30 Tagen vor der Preisermäßigung angegeben werden. Das ist in Art. 6 a der Richtlinie 98/6/EG vorgeschrieben.",
+      "labelRegulationPriceNet": "Günstigster Preis (letzten 30 Tage, Netto)"
     },
     "sw-text-editor": {
       "labelTextLength": "{count} Zeichen | {count} Zeichen"
@@ -568,6 +571,7 @@
     },
     "sw-condition": {
       "operator": {
+        "placeholder": "Operator auswählen...",
         "lowerThanEquals": "Kleiner/gleich",
         "equals": "Gleich",
         "greaterThanEquals": "Größer/gleich",
@@ -606,6 +610,11 @@
         "isNewCustomerRule": "Neukunde",
         "lastNameRule": "Kundennachname",
         "isCompanyRule": "Firmenkunde",
+        "cartTaxDisplay": {
+          "label": "Steuerdarstellung",
+          "gross": "Brutto",
+          "net": "Netto"
+        },
         "isGuestRule": "Gastbesteller",
         "isNewsletterRecipient": "Kunde ist Newsletter-Empfänger",
         "daysSinceLastOrderRule": "Tage seit letzter Bestellung",
@@ -670,6 +679,7 @@
         "lineItemClearanceSale": "Position im Abverkauf",
         "lineItemPromotedRule": "Position ist hervorgehoben",
         "lineItemInCategoryRule": "Position in Kategorie",
+        "categoryWithProductStreamTooltip": "Produkte in dieser Kategorie werden durch eine dynamische Produktgruppe zugewiesen. Bitte verwende die Bedingung \"Position in dynamischer Produktgruppe\" um dynamisch auf diese Produkte zuzugreifen.",
         "lineItemInProductStreamRule": "Position in dynamischer Produktgruppe",
         "lineItemTaxationRule": "Position mit Steuersatz",
         "lineItemDimensionWidthRule": "Position mit Breite",
@@ -899,8 +909,19 @@
       "buttonVariantSecondary": "Sekundär",
       "buttonVariantPrimarySmall": "Primär (klein)",
       "buttonVariantSecondarySmall": "Sekundär (klein)",
+      "linkTo": "Link zu",
       "placeholder": "URL eingeben ...",
-      "linkTo": "Link zu"
+      "labelUrl": "URL",
+      "labelType": "Typ",
+      "labelLink": "Link",
+      "labelProduct": "Produkt",
+      "labelCategory":"Kategorie",
+      "labelEmail": "E-Mail-Adresse",
+      "labelPhoneNumber": "Telefonnummer",
+      "placeholderPhoneNumber": "Telefonnummer eingeben ...",
+      "placeholderEmail": "E-Mail-Adresse eingeben ...",
+      "placeholderProduct": "Produkt auswählen ...",
+      "placeholderCategory": "Kategorie auswählen ..."
     },
     "table": {
       "addHeading": "Tabellenkopf hinzufügen",
@@ -1137,7 +1158,8 @@
   "sw-maintain-currencies-modal": {
     "title": "Währungen pflegen",
     "columnPrice": "Preise (Brutto / Netto)",
-    "columnListPriceHeader": "Streichpreise (Brutto / Netto)"
+    "columnListPriceHeader": "Streichpreise (Brutto / Netto)",
+    "columnReferencePriceHeader": "Günstigster Preis (letzte 30 Tage, Brutto / Netto)"
   },
   "sw-privileges": {
     "tooltip": {

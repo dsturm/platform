@@ -32,6 +32,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteException;
 use Shopware\Core\Framework\Test\IdsCollection;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopware\Core\Framework\Test\TestCaseBase\QueueTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseHelper\CallableClass;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -47,6 +48,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 class ProductRepositoryTest extends TestCase
 {
     use IntegrationTestBehaviour;
+    use QueueTestBehaviour;
 
     public const TEST_LANGUAGE_ID = 'cc72c24b82684d72a4ce91054da264bf';
     public const TEST_LOCALE_ID = 'cf735c44dc7b4428bb3870fe4ffea2df';
@@ -70,7 +72,6 @@ class ProductRepositoryTest extends TestCase
         $this->context = Context::createDefaultContext();
 
         $this->searchKeywordUpdater = $this->getContainer()->get(SearchKeywordUpdater::class);
-        $this->resetSearchKeywordUpdaterConfig();
     }
 
     public function testWritePrice(): void
@@ -241,13 +242,16 @@ class ProductRepositoryTest extends TestCase
 
         $this->repository->create($products, $this->context);
         $delete = $this->repository->delete([['id' => $secondVariantId]], $this->context);
+
+        $this->runWorker();
+
         static::assertInstanceOf(EntityWrittenContainerEvent::class, $delete);
 
         $ids = $delete->getPrimaryKeys('product');
 
-        static::assertCount(2, $ids);
-        static::assertContains($parentId, $ids);
         static::assertContains($secondVariantId, $ids);
+
+        $this->runWorker();
 
         $product = $this->repository
             ->search(new Criteria([$parentId]), $this->context)
@@ -3056,6 +3060,9 @@ class ProductRepositoryTest extends TestCase
 
         $this->repository->upsert([$data], $this->context);
 
+        // depending ids (parents and children) will be queued
+        $this->runWorker();
+
         $variants = $this->repository->search(new Criteria([$variantB, $variantA]), $context)->getElements();
         $product = $this->repository->search(new Criteria([$productId]), $context)->first();
 
@@ -3071,6 +3078,28 @@ class ProductRepositoryTest extends TestCase
 
         static::assertEquals($productProperties, $variantAProperties);
         static::assertEquals($productProperties, $variantBProperties);
+    }
+
+    public function testInheritanceUpdateOnDeleteRelation(): void
+    {
+        $ids = new IdsCollection();
+
+        $product = (new ProductBuilder($ids, 'x1'))->price(100)->category('c1')->build();
+        $this->getContainer()->get('product.repository')->upsert([$product], Context::createDefaultContext());
+
+        $event = $this->getContainer()->get('category.repository')->delete([['id' => $ids->get('c1')]], Context::createDefaultContext());
+
+        $expected = [
+            'category.deleted' => [$ids->get('c1')],
+            'product_category.deleted' => [['productId' => $ids->get('x1'), 'categoryId' => $ids->get('c1')]],
+            'product_category_tree.deleted' => [['productId' => $ids->get('x1'), 'categoryId' => $ids->get('c1')]],
+            'product.written' => [$ids->get('x1')],
+        ];
+
+        foreach ($expected as $key => $value) {
+            static::assertArrayHasKey($key, $event->getList());
+            static::assertEquals($value, $event->getList()[$key]);
+        }
     }
 
     private function createLanguageContext(array $languages, bool $inheritance)
@@ -3109,26 +3138,6 @@ class ProductRepositoryTest extends TestCase
                 ],
             ],
             Context::createDefaultContext()
-        );
-    }
-
-    private function resetSearchKeywordUpdaterConfig(): void
-    {
-        $class = new \ReflectionClass($this->searchKeywordUpdater);
-        if ($class->hasProperty('decorated')) {
-            $property = $class->getProperty('decorated');
-            $property->setAccessible(true);
-            $searchKeywordUpdaterInner = $property->getValue($this->searchKeywordUpdater);
-        } else {
-            $searchKeywordUpdaterInner = $this->searchKeywordUpdater;
-        }
-
-        $class = new \ReflectionClass($searchKeywordUpdaterInner);
-        $property = $class->getProperty('config');
-        $property->setAccessible(true);
-        $property->setValue(
-            $searchKeywordUpdaterInner,
-            []
         );
     }
 }

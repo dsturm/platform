@@ -1,12 +1,13 @@
 /**
  * @module core/factory/component
+ * @deprecated tag:v6.5.0 - will be replaced by async-component.factory.ts
  */
 import { warn } from 'src/core/service/utils/debug.utils';
 import { cloneDeep } from 'src/core/service/utils/object.utils';
 import TemplateFactory from 'src/core/factory/template.factory';
 // eslint-disable-next-line import/no-named-default
 import type { default as Vue, ComponentOptions } from 'vue';
-import {
+import type {
     ThisTypedComponentOptionsWithRecordProps,
     ThisTypedComponentOptionsWithArrayProps,
 // eslint-disable-next-line import/no-unresolved
@@ -101,7 +102,7 @@ function registerComponentHelper(name: string, helperFunction: unknown): boolean
 function register<V extends Vue, Data, Methods, Computed, PropNames extends string>(componentName: string, componentConfiguration: ThisTypedComponentOptionsWithArrayProps<V, Data, Methods, Computed, PropNames>): boolean | ComponentConfig;
 function register<V extends Vue, Data, Methods, Computed, Props>(componentName: string, componentConfiguration: ThisTypedComponentOptionsWithRecordProps<V, Data, Methods, Computed, Props>): boolean | ComponentConfig;
 function register(componentName: string, componentConfiguration: ComponentConfig<Vue>): boolean | ComponentConfig {
-/* eslint-enable max-len */
+    /* eslint-enable max-len */
     const config = componentConfiguration;
 
     if (!componentName || !componentName.length) {

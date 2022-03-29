@@ -2,6 +2,9 @@
 
 namespace Shopware\Core\Framework\Log;
 
+/**
+ * @deprecated tag:v6.5.0 - Class is deprecated, use LogAware instead.
+ */
 interface LogAwareBusinessEventInterface
 {
     public function getLogData(): array;

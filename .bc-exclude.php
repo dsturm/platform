@@ -11,6 +11,7 @@ return [
         '**/src/Elasticsearch/Framework/Command/ElasticsearchTestAnalyzerCommand.php', // Why?
         '**/src/Core/Checkout/Payment/Cart/PaymentHandler/PreparedPaymentHandlerInterface.php', // internal has been removed
         '**/src/Core/Checkout/Payment/Exception/ValidatePreparedPaymentException.php', // internal has been removed
+        '**src/Core/Framework/Script/ServiceStubs.php', // never intended to be extended
     ],
     'errors' => [
         'Shopware\\\\Core\\\\System\\\\SystemConfig\\\\Util\\\\ConfigReader#\\$xsdFile', // Can not be inspected through reflection (__DIR__ constant)
@@ -28,12 +29,15 @@ return [
         'The return type of Shopware\\\\Core\\\\Framework\\\\Api\\\\ApiDefinition\\\\Generator\\\\OpenApi\\\\DeactivateValidationAnalysis#validate',
         'OpenApi\\\\Analysis',
 
-        // Condional feature flag class loading
+        // Conditional feature flag class loading
         'The parameter \\$product of Shopware\\\\Core\\\\Content\\\\Product\\\\ProductVariationBuilder#build()',
         'The parameter \\$product of Shopware\\\\Core\\\\Content\\\\Product\\\\AbstractProductMaxPurchaseCalculator#calculate()',
         'The parameter \\$product of Shopware\\\\Core\\\\Content\\\\Product\\\\AbstractIsNewDetector#isNew()',
         'The parameter \\$product of Shopware\\\\Core\\\\Content\\\\Product\\\\AbstractProductVariationBuilder#build()',
         'The parameter \\$product of Shopware\\\\Core\\\\Content\\\\Product\\\\ProductMaxPurchaseCalculator#calculate()',
         'The parameter \\$product of Shopware\\\\Core\\\\Content\\\\Product\\\\IsNewDetector#isNew()',
+
+        'The return type of Shopware\\\\Core\\\\Framework\\\\Routing\\\\RouteEventSubscriber',
+        'These ancestors of Shopware\\\\Core\\\\Framework\\\\Script\\\\Api\\\\StoreApiCacheKeyHook have been removed'
     ],
 ];

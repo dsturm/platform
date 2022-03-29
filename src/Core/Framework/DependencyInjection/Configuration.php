@@ -27,6 +27,7 @@ class Configuration implements ConfigurationInterface
                 ->append($this->createDeploymentSection())
                 ->append($this->createMediaSection())
                 ->append($this->createDalSection())
+                ->append($this->createMailSection())
                 ->append($this->createFeatureSection())
                 ->append($this->createLoggerSection())
                 ->append($this->createCacheSection())
@@ -438,10 +439,12 @@ class Configuration implements ConfigurationInterface
         $rootNode = $treeBuilder->getRootNode();
         $rootNode
             ->children()
+                ->booleanNode('compress')->defaultFalse()->end()
                 ->integerNode('expire_days')
                     ->min(1)
                     ->defaultValue(120)
                 ->end()
+                ->scalarNode('redis_url')->end()
             ->end();
 
         return $rootNode;
@@ -528,6 +531,19 @@ class Configuration implements ConfigurationInterface
                     ->scalarNode('type')->end()
                     ->variableNode('config')->end()
                 ->end()
+            ->end();
+
+        return $rootNode;
+    }
+
+    private function createMailSection(): ArrayNodeDefinition
+    {
+        $treeBuilder = new TreeBuilder('mail');
+
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+            ->booleanNode('update_on_order')->defaultTrue()->end()
             ->end();
 
         return $rootNode;

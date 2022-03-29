@@ -1,168 +1,184 @@
 import os
 import sys
-import uuid
-from locust import FastHttpUser, task, between, constant
+import time
+from locust import FastHttpUser, task, between, constant,tag
 from bs4 import BeautifulSoup
 
-sys.path.append(os.path.dirname(__file__) + '/src')
-from storefront import Storefront
-from context import Context
-from api import Api
+sys.path.append(os.path.dirname(__file__) + '/..')
+
+from common.storefront import Storefront
+from common.context import Context
+from common.api import Api
 
 context = Context()
 
-class Admin(FastHttpUser):
-    id = None
-    weight = 1
-    wait_time = between(5, 10)
+class Erp(FastHttpUser):
+    fixed_count = 1
+
+    def on_start(self):
+        self.api = Api(self.client, context)
 
     @task
-    def stock_updates(self):
-        # fixed_count locust config is broken
-        if (not self.allowed()):
+    def call_api(self):
+        if (context.erp == False):
             return
 
-        api = Api(self.client, context)
-        api.update_stock()
+        self.api.update_prices()
+        self.api.update_stock()
 
-    @task
-    def price_updates(self):
-        # fixed_count locust config is broken
-        if (not self.allowed()):
-            return
-
-        api = Api(self.client, context)
-        api.update_prices()
-
-    def allowed(self):
-        if (self.id == None):
-            self.id = str(uuid.uuid4())
-
-        if (self.id in context.admin_ids):
-            return True
-
-        if (len(context.admin_ids) < context.max_api_users):
-            context.admin_ids.append(self.id)
-            return True
-
-        return False
-
-class Customer(FastHttpUser):
-    weight=100
-    wait_time = between(2, 10)
-
-    @task(4)
-    def short_time_listing_visitor(self):
-        page = Storefront(self.client, context)
-        page = page.go_to_listing()
-        page = page.view_products(2)
-
-        page = page.go_to_next_page()
-        page = page.view_products(3)
-
-    @task(4)
-    def short_time_search_visitor(self):
-        page = Storefront(self.client, context)
-        page = page.do_search()
-        page = page.view_products(2)
-
-        page = page.go_to_next_page()
-        page = page.view_products(2)
-        page = page.go_to_next_page()
-
-        page = page.add_manufacturer_filter()
-        page = page.select_sorting()
-        page = page.view_products(3)
+class Visitor(FastHttpUser):
+    wait_time = between(2, 5)
+    weight = 10
 
     @task(3)
-    def long_time_visitor(self):
+    def listing(self):
+        page = Storefront(self.client, context)
+        page.go_to_listing()
+        page.view_products(2)
+
+        page.go_to_listing()
+        if (context.allow_filter == True):
+            page.add_manufacturer_filter()
+
+        page.select_sorting()
+        page.go_to_next_page()
+        page.view_products(3)
+
+        page.go_to_listing()
+        if (context.allow_filter == True):
+            page.add_property_filter()
+
+        page.go_to_next_page()
+        page.view_products(2)
+
+    @task(1)
+    def search(self):
+        page = Storefront(self.client, context)
+        page.do_search()
+        page.view_products(2)
+
+        page.go_to_next_page()
+        page.view_products(2)
+        page.go_to_next_page()
+
+        if (context.allow_filter == True):
+            page.add_manufacturer_filter()
+
+        page.select_sorting()
+        page.view_products(3)
+
+class Surfer(FastHttpUser):
+    wait_time = between(2, 5)
+    weight = 6
+
+    @task
+    def surf(self):
         page = Storefront(self.client, context)
 
         # search products over listings
-        page = page.go_to_listing()
+        page.go_to_listing()
 
         # take a look to the first two products
-        page = page.view_products(2)
-        page = page.go_to_next_page()
+        page.view_products(2)
+        page.go_to_next_page()
 
         # open two different product pages
-        page = page.view_products(2)
+        page.view_products(2)
 
         # sort listing and use properties to filter
-        page = page.select_sorting()
-        page = page.add_property_filter()
+        page.select_sorting()
+        if (context.allow_filter == True):
+            page.add_property_filter()
 
-        page = page.view_products(1)
-        page = page.go_to_next_page()
+        page.view_products(1)
+        page.go_to_next_page()
 
         # switch to search to find products
-        page = page.do_search()
-        page = page.view_products(2)
+        page.do_search()
+        page.view_products(2)
 
         # use property filter to find products
-        page = page.add_property_filter()
+        if (context.allow_filter == True):
+            page.add_property_filter()
 
         # take a look to the top three hits
-        page = page.view_products(3)
-        page = page.go_to_next_page()
+        page.view_products(3)
+        page.go_to_next_page()
 
-    @task(3)
-    def short_time_buyer(self):
+class SurfWithOrder(FastHttpUser):
+    wait_time = between(2, 5)
+    weight = 6
+
+    @task
+    def surf(self):
         page = Storefront(self.client, context)
-        page = page.register()       #instead of login, we register
-        page = page.go_to_account_orders()
-
-        page = page.go_to_listing()
-        page = page.view_products(2)
-        page = page.add_product_to_cart()
-        page = page.add_product_to_cart()
-        page = page.instant_order()
-        page = page.logout()
-
-    @task(2)
-    def long_time_buyer(self):
-        page = Storefront(self.client, context)
-        page = page.register()      #instead of login, we register
-        page = page.go_to_account()
-        page = page.go_to_account_orders()
+        page.register()      #instead of login, we register
+        page.browse_account()
 
         # search products over listings
-        page = page.go_to_listing()
+        page.go_to_listing()
 
         # take a look to the first two products
-        page = page.view_products(2)
-        page = page.add_product_to_cart()
-        page = page.go_to_next_page()
+        page.view_products(2)
+        page.add_product_to_cart()
+        page.go_to_next_page()
 
         # open two different product pages
-        page = page.view_products(2)
-        page = page.add_product_to_cart()
+        page.view_products(2)
+        page.add_product_to_cart()
 
         # sort listing and use properties to filter
-        page = page.select_sorting()
-        page = page.add_property_filter()
-        page = page.view_products(1)
-        page = page.go_to_next_page()
-        page = page.add_product_to_cart()
-        page = page.instant_order()
+        page.select_sorting()
+        if (context.allow_filter == True):
+            page.add_property_filter()
+
+        page.view_products(1)
+        page.go_to_next_page()
+        page.add_product_to_cart()
+        page.instant_order()
 
         # switch to search to find products
-        page = page.do_search()
-        page = page.view_products(2)
+        page.do_search()
+        page.view_products(2)
 
-        # use property filter to find products
-        page = page.add_property_filter()
+        if (context.allow_filter == True):
+            # use property filter to find products
+            page.add_property_filter()
 
         # take a look to the top three hits
-        page = page.view_products(3)
-        page = page.add_product_to_cart()
-        page = page.add_product_to_cart()
-        page = page.go_to_next_page()
+        page.view_products(3)
+        page.add_product_to_cart()
+        page.add_product_to_cart()
+        page.go_to_next_page()
 
-        page = page.view_products(2)
-        page = page.add_product_to_cart()
-        page = page.add_product_to_cart()
-        page = page.add_product_to_cart()
+        page.view_products(2)
+        page.add_product_to_cart()
+        page.add_product_to_cart()
+        page.add_product_to_cart()
 
-        page = page.instant_order()
-        page = page.logout()
+        page.instant_order()
+        page.logout()
+
+class FastOrder(FastHttpUser):
+    weight = 4
+    def on_start(self):
+        self.page = Storefront(self.client, context)
+        self.page.register()
+        self.page.logout()
+
+    @task
+    def order(self):
+        self.page.login()
+        self.page.add_products_to_cart(3)
+        self.page.instant_order()
+        self.page.logout()
+
+class Nvidia(FastHttpUser):
+    weight = 2
+    @task
+    def follow_advertisement(self):
+        page = Storefront(self.client, context)
+        page.register()
+        page.add_advertisement()
+        page.instant_order()
+        page.logout()

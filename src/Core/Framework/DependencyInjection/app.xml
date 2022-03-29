@@ -110,11 +110,14 @@
             <argument type="service" id="Shopware\Core\Framework\App\Template\TemplateStateService"/>
             <argument type="service" id="Shopware\Core\Framework\App\Lifecycle\Persister\ScriptPersister"/>
             <argument type="service" id="Shopware\Core\Framework\App\Payment\PaymentMethodStateService"/>
+            <argument type="service" id="Shopware\Core\Framework\Script\Execution\ScriptExecutor"/>
         </service>
 
         <service id="Shopware\Core\Framework\App\ActiveAppsLoader">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="Shopware\Core\Framework\App\Lifecycle\AppLoader"/>
+
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <service id="Shopware\Core\Framework\App\Template\TemplateStateService" public="true">
@@ -190,6 +193,7 @@
             <argument type="service" id="integration.repository"/>
             <argument type="service" id="acl_role.repository"/>
             <argument type="service" id="Shopware\Core\Framework\Plugin\Util\AssetService"/>
+            <argument type="service" id="Shopware\Core\Framework\Script\Execution\ScriptExecutor"/>
             <argument type="string">%kernel.project_dir%</argument>
         </service>
 
@@ -290,6 +294,9 @@
             <argument type="service" id="logger"/>
             <argument type="service" id="Shopware\Core\Framework\App\ActionButton\Response\ActionButtonResponseFactory"/>
             <argument type="service" id="Shopware\Core\Framework\App\ShopId\ShopIdProvider"/>
+            <argument type="service" id="router"/>
+            <argument type="service" id="request_stack"/>
+            <argument type="service" id="kernel"/>
         </service>
 
         <service id="Shopware\Core\Framework\App\ActionButton\AppActionLoader">

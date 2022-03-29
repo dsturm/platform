@@ -64,12 +64,12 @@
         "composer/composer": "^2.1.9",
         "composer/semver": "^3.2",
         "doctrine/annotations": "1.13.1",
-        "doctrine/dbal": "2.13.3",
+        "doctrine/dbal": "~2.13.8",
         "doctrine/inflector": "~1.4.4",
         "dompdf/dompdf": "1.0.2",
         "elasticsearch/elasticsearch": "7.16.0",
-        "enqueue/dbal": "0.10.11",
-        "enqueue/redis": "0.10.9",
+        "enqueue/dbal": "~0.10.15",
+        "enqueue/redis": "~0.10.9",
         "erusev/parsedown-extra": "0.8.1",
         "ezyang/htmlpurifier": "4.13.0",
         "google/cloud-storage": "~1.25.1",
@@ -158,7 +158,7 @@
         "league/construct-finder": "^1.1",
         "maltyxx/images-generator": "~1.0.0",
         "mbezhanov/faker-provider-collection": "~2.0.1",
-        "nikic/php-parser": "~4.10.4",
+        "nikic/php-parser": "~4.13.2",
         "opis/json-schema": "~1.0.19",
         "phpdocumentor/reflection-docblock": "^5.3.0",
         "phpstan/extension-installer": "^1.1.0",
@@ -166,8 +166,8 @@
         "phpstan/phpstan-doctrine": "1.0.2",
         "phpstan/phpstan-phpunit": "1.0.0",
         "phpstan/phpstan-symfony": "1.0.4",
-        "phpunit/php-code-coverage": "~9.2.5",
-        "phpunit/phpunit": "~9.5.6",
+        "phpunit/php-code-coverage": "~9.2.14",
+        "phpunit/phpunit": "~9.5.17",
         "smalot/pdfparser": "~0.14.0",
         "symfony/browser-kit": "~5.4.0",
         "symfony/css-selector": "~5.4.0",
@@ -240,6 +240,7 @@
         ],
         "build:js": [
             "@php bin/console bundle:dump",
+            "@php bin/console feature:dump",
             "@build:js:admin",
             "@build:js:storefront"
         ],
@@ -358,6 +359,10 @@
         "admin:unit": [
             "@php bin/console framework:schema -s 'entity-schema' src/Administration/Resources/app/administration/test/_mocks_/entity-schema.json",
             "@npm:admin run unit"
+        ],
+        "admin:unit:watch": [
+            "@php bin/console framework:schema -s 'entity-schema' src/Administration/Resources/app/administration/test/_mocks_/entity-schema.json",
+            "@npm:admin run unit-watch"
         ]
     },
     "autoload": {

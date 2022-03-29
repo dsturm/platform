@@ -351,13 +351,8 @@ parameters:
 			path: src/Core/Checkout/Payment/PaymentService.php
 
 		-
-			message: "#^Parameter \\#1 \\$token of class Shopware\\\\Core\\\\Checkout\\\\Payment\\\\Exception\\\\TokenExpiredException constructor expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Core/Checkout/Payment/PaymentService.php
-
-		-
 			message: "#^Parameter \\#1 \\$tokenId of method Shopware\\\\Core\\\\Checkout\\\\Payment\\\\Cart\\\\Token\\\\TokenFactoryInterfaceV2\\:\\:invalidateToken\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
+			count: 2
 			path: src/Core/Checkout/Payment/PaymentService.php
 
 		-
@@ -1086,16 +1081,6 @@ parameters:
 			path: src/Core/Content/Product/DataAbstractionLayer/StockUpdater.php
 
 		-
-			message: "#^Call to an undefined method Shopware\\\\Core\\\\Framework\\\\DataAbstractionLayer\\\\Write\\\\Command\\\\ChangeSetAware\\|Shopware\\\\Core\\\\Framework\\\\DataAbstractionLayer\\\\Write\\\\Command\\\\InsertCommand\\:\\:hasField\\(\\)\\.$#"
-			count: 3
-			path: src/Core/Content/Product/DataAbstractionLayer/StockUpdater.php
-
-		-
-			message: "#^Call to an undefined method Shopware\\\\Core\\\\Framework\\\\DataAbstractionLayer\\\\Write\\\\Command\\\\ChangeSetAware\\|Shopware\\\\Core\\\\Framework\\\\DataAbstractionLayer\\\\Write\\\\Command\\\\InsertCommand\\:\\:requestChangeSet\\(\\)\\.$#"
-			count: 1
-			path: src/Core/Content/Product/DataAbstractionLayer/StockUpdater.php
-
-		-
 			message: "#^Argument of an invalid type Shopware\\\\Core\\\\Checkout\\\\Order\\\\Aggregate\\\\OrderLineItem\\\\OrderLineItemCollection\\|null supplied for foreach, only iterables are supported\\.$#"
 			count: 1
 			path: src/Core/Content/Product/DataAbstractionLayer/StockUpdater.php
@@ -1526,11 +1511,6 @@ parameters:
 			path: src/Core/Framework/Api/Command/DumpClassSchemaCommand.php
 
 		-
-			message: "#^Cannot cast PhpParser\\\\Node\\\\Identifier\\|PhpParser\\\\Node\\\\Name\\|PhpParser\\\\Node\\\\UnionType\\|null to string\\.$#"
-			count: 1
-			path: src/Core/Framework/Api/Command/DumpClassSchemaCommand.php
-
-		-
 			message: "#^Cannot call method getPropertyName\\(\\) on Shopware\\\\Core\\\\Framework\\\\DataAbstractionLayer\\\\Field\\\\Field\\|null\\.$#"
 			count: 3
 			path: src/Core/Framework/Api/Controller/ApiController.php
@@ -1729,11 +1709,6 @@ parameters:
 			message: "#^Argument of an invalid type DOMNamedNodeMap\\|null supplied for foreach, only iterables are supported\\.$#"
 			count: 1
 			path: src/Core/Framework/App/Manifest/Xml/Webhook.php
-
-		-
-			message: "#^Argument of an invalid type array\\<int, string\\>\\|false supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: src/Core/Framework/Bundle.php
 
 		-
 			message: "#^Method Shopware\\\\Core\\\\Framework\\\\Context\\:\\:enableInheritance\\(\\) has no return type specified\\.$#"

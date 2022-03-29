@@ -109,9 +109,9 @@ describe('Promotion: Test crud operations', () => {
 
         // Finish order
         cy.get('.confirm-tos .card-title').contains('Terms and conditions and cancellation policy');
-        cy.get('.confirm-tos .custom-checkbox label').scrollIntoView();
-        cy.get('.confirm-tos .custom-checkbox label').click(1, 1);
-        cy.get('.confirm-tos .custom-checkbox label').scrollIntoView();
+        cy.get('.checkout-confirm-tos-label').scrollIntoView();
+        cy.get('.checkout-confirm-tos-label').click(1, 1);
+        cy.get('.checkout-confirm-tos-label').scrollIntoView();
         cy.get('.cart-item-promotion').contains('Funicular prices');
         cy.get('.cart-item-promotion .cart-item-total-price').contains('-€10.00');
         cy.get('.cart-item-promotion .cart-item-tax-price').contains('-€1.60');
@@ -146,7 +146,7 @@ describe('Promotion: Test crud operations', () => {
         // Verify updated product
         cy.wait('@deleteData').its('response.statusCode').should('equal', 204);
         cy.get('button[title="Refresh"]').click();
-        cy.get('.sw-data-grid__skeleton').should('not.exist');
+        cy.get('.sw-skeleton__listing').should('not.exist');
         cy.get(page.elements.emptyState).should('be.visible');
     });
 });

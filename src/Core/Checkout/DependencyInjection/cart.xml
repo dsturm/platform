@@ -186,6 +186,7 @@
         <service id="Shopware\Core\Checkout\Cart\Address\AddressValidator">
             <argument type="service" id="country.repository"/>
             <tag name="shopware.cart.validator"/>
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Cart\Validator">
@@ -257,12 +258,13 @@
             <argument type="service" id="Shopware\Core\Checkout\Cart\Tax\TaxDetector"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="event_dispatcher"/>
+
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Cart\CachedRuleLoader" decorates="Shopware\Core\Checkout\Cart\RuleLoader" decoration-priority="-1000">
             <argument type="service" id="Shopware\Core\Checkout\Cart\CachedRuleLoader.inner"/>
             <argument type="service" id="cache.object"/>
-            <argument type="service" id="logger"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Cart\RuleLoader">
@@ -360,6 +362,8 @@
             <argument type="service" id="Shopware\Core\Checkout\Cart\LineItemFactoryRegistry"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\Processor"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
+
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Cart\Processor\ContainerCartProcessor">
@@ -373,6 +377,17 @@
             <tag name="shopware.cart.processor" priority="3700"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\Price\PercentagePriceCalculator"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\Price\CurrencyPriceCalculator"/>
+        </service>
+
+        <service id="Shopware\Core\Checkout\Cart\RedisCartPersister">
+            <argument type="service" id="shopware.cart.redis"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument>%shopware.cart.compress%</argument>
+        </service>
+
+        <service id="shopware.cart.redis" class="Redis">
+            <factory class="Shopware\Core\Framework\Adapter\Cache\RedisConnectionFactory" method="createConnection"/>
+            <argument>%shopware.cart.redis_url%</argument>
         </service>
     </services>
 </container>

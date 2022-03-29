@@ -4,7 +4,6 @@ namespace Shopware\Core\Content\Test\Mail\Service;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Mail\Service\AbstractMailSender;
 use Shopware\Core\Content\Mail\Service\MailFactory;
 use Shopware\Core\Content\Mail\Service\MailService;
@@ -30,7 +29,8 @@ class MailServiceTest extends TestCase
     public function testPluginsCanExtendMailData(): void
     {
         $renderer = new TestRenderer(
-            $this->getContainer()->get('twig')
+            $this->getContainer()->get('twig'),
+            $this->getContainer()->getParameter('kernel.cache_dir')
         );
 
         $mailService = new MailService(
@@ -43,7 +43,6 @@ class MailServiceTest extends TestCase
             $this->getContainer()->get('sales_channel.repository'),
             $this->getContainer()->get(SystemConfigService::class),
             $this->getContainer()->get('event_dispatcher'),
-            $this->createMock(LoggerInterface::class),
             $this->createMock(UrlGeneratorInterface::class)
         );
         $data = [
@@ -115,7 +114,6 @@ class MailServiceTest extends TestCase
             $salesChannelRepository,
             $systemConfig,
             $this->createMock(EventDispatcher::class),
-            $this->createMock(LoggerInterface::class),
             $this->createMock(UrlGeneratorInterface::class)
         );
 
@@ -172,7 +170,6 @@ class MailServiceTest extends TestCase
             $salesChannelRepository,
             $this->getContainer()->get(SystemConfigService::class),
             $eventDispatcher,
-            $this->createMock(LoggerInterface::class),
             $this->createMock(UrlGeneratorInterface::class)
         );
 
@@ -214,7 +211,6 @@ class MailServiceTest extends TestCase
             $salesChannelRepository,
             $this->getContainer()->get(SystemConfigService::class),
             $this->createMock(EventDispatcher::class),
-            $this->createMock(LoggerInterface::class),
             $this->createMock(UrlGeneratorInterface::class)
         );
 

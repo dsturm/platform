@@ -3,6 +3,7 @@
 namespace Shopware\Core\System\SalesChannel;
 
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
+use Shopware\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRule;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
@@ -116,6 +117,7 @@ class SalesChannelContext extends Struct
     private $domainId;
 
     /**
+     * @deprecated tag:v6.5.0 - __construct will be internal, use context factory to create a new context
      * @deprecated tag:v6.5.0 - Parameter $fallbackCustomerGroup is deprecated and will be removed
      */
     public function __construct(
@@ -370,5 +372,16 @@ class SalesChannelContext extends Struct
     public function getCurrencyId(): string
     {
         return $this->getCurrency()->getId();
+    }
+
+    public function ensureLoggedIn(bool $allowGuest = true): void
+    {
+        if ($this->customer === null) {
+            throw new CustomerNotLoggedInException();
+        }
+
+        if (!$allowGuest && $this->customer->getGuest()) {
+            throw new CustomerNotLoggedInException();
+        }
     }
 }
